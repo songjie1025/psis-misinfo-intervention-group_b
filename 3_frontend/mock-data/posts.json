@@ -1,0 +1,162 @@
+[
+  {
+    "id": 1,
+    "author": "health_reporter",
+    "content": "WHO confirms that regular exercise reduces heart disease risk by up to 30%, according to a 10-year study involving 50,000 participants.",
+    "category": "health",
+    "is_misinformation": false,
+    "claim_text": "regular exercise reduces heart disease risk by 30%"
+  },
+  {
+    "id": 2,
+    "author": "science_daily",
+    "content": "NASA satellite data shows global average sea level has risen about 10 cm since 1993.",
+    "category": "science",
+    "is_misinformation": false,
+    "claim_text": "global sea level has risen 10 cm since 1993"
+  },
+  {
+    "id": 3,
+    "author": "tech_insider",
+    "content": "Apple announced that all new iPhones will use USB-C charging ports starting from the iPhone 15 series.",
+    "category": "tech",
+    "is_misinformation": false,
+    "claim_text": "iPhone 15 uses USB-C"
+  },
+  {
+    "id": 4,
+    "author": "policy_watch",
+    "content": "The EU Parliament passed the Digital Services Act requiring large platforms to remove illegal content within 24 hours.",
+    "category": "politics",
+    "is_misinformation": false,
+    "claim_text": "EU Digital Services Act requires 24-hour content removal"
+  },
+  {
+    "id": 5,
+    "author": "med_journal",
+    "content": "A clinical trial published in The Lancet shows that a new malaria vaccine is 75% effective in children under 5.",
+    "category": "health",
+    "is_misinformation": false,
+    "claim_text": "new malaria vaccine 75% effective in children"
+  },
+  {
+    "id": 6,
+    "author": "climate_now",
+    "content": "Renewable energy sources accounted for over 30% of global electricity generation in 2024, per IEA report.",
+    "category": "science",
+    "is_misinformation": false,
+    "claim_text": "renewables accounted for 30% of global electricity in 2024"
+  },
+  {
+    "id": 7,
+    "author": "dev_news",
+    "content": "Python remains the most popular programming language on GitHub for the 5th consecutive year according to Octoverse report.",
+    "category": "tech",
+    "is_misinformation": false,
+    "claim_text": "Python most popular language on GitHub 5 years running"
+  },
+  {
+    "id": 8,
+    "author": "election_watch",
+    "content": "Voter turnout in the 2024 European Parliament elections was approximately 51%, according to official EU data.",
+    "category": "politics",
+    "is_misinformation": false,
+    "claim_text": "EU voter turnout 51% in 2024"
+  },
+  {
+    "id": 9,
+    "author": "nutrition_facts",
+    "content": "Studies show that eating 5 servings of fruits and vegetables daily is associated with lower mortality risk.",
+    "category": "health",
+    "is_misinformation": false,
+    "claim_text": "5 servings of fruits/vegetables daily lowers mortality"
+  },
+  {
+    "id": 10,
+    "author": "ai_news",
+    "content": "OpenAI released GPT-4o, a multimodal model that can process text, images, and audio in a single neural network.",
+    "category": "tech",
+    "is_misinformation": false,
+    "claim_text": "GPT-4o processes text, images, and audio natively"
+  },
+  {
+    "id": 11,
+    "author": "wellness_guru",
+    "content": "Doctors are hiding the truth: drinking celery juice every morning cures cancer naturally without chemotherapy.",
+    "category": "health",
+    "is_misinformation": true,
+    "claim_text": "celery juice cures cancer"
+  },
+  {
+    "id": 12,
+    "author": "conspiracy_daily",
+    "content": "5G towers are secretly spreading a virus that causes headaches and insomnia. Multiple countries have banned 5G because of this.",
+    "category": "science",
+    "is_misinformation": true,
+    "claim_text": "5G towers spread virus causing health problems"
+  },
+  {
+    "id": 13,
+    "author": "crypto_king",
+    "content": "This new cryptocurrency will 100x in the next 48 hours. Elon Musk is secretly investing billions. Don't miss out!",
+    "category": "tech",
+    "is_misinformation": true,
+    "claim_text": "crypto will 100x with Elon Musk backing"
+  },
+  {
+    "id": 14,
+    "author": "free_thinker",
+    "content": "The government is using vaccines to implant microchips in citizens. A whistleblower doctor confirmed this last week.",
+    "category": "health",
+    "is_misinformation": true,
+    "claim_text": "vaccines contain microchips"
+  },
+  {
+    "id": 15,
+    "author": "political_insider",
+    "content": "The election was completely rigged. Millions of illegal votes were counted and officials are covering it up.",
+    "category": "politics",
+    "is_misinformation": true,
+    "claim_text": "election rigged with millions of illegal votes"
+  },
+  {
+    "id": 16,
+    "author": "natural_healer",
+    "content": "Big Pharma paid scientists to fake climate change data so they can sell more medications. The Earth is actually cooling.",
+    "category": "science",
+    "is_misinformation": true,
+    "claim_text": "climate change data is faked by pharma companies"
+  },
+  {
+    "id": 17,
+    "author": "truth_seeker_99",
+    "content": "The WHO admitted that COVID-19 was created in a lab as a bioweapon. This was leaked in internal documents.",
+    "category": "health",
+    "is_misinformation": true,
+    "claim_text": "WHO admitted COVID-19 was a lab-created bioweapon"
+  },
+  {
+    "id": 18,
+    "author": "clickbait_news",
+    "content": "BREAKING: A famous actor just died in a plane crash! Details are still emerging but multiple sources confirm.",
+    "category": "politics",
+    "is_misinformation": true,
+    "claim_text": "famous actor died in plane crash"
+  },
+  {
+    "id": 19,
+    "author": "quantum_hacker",
+    "content": "Scientists have accidentally opened a portal to another dimension at CERN. The government is hiding this from the public.",
+    "category": "tech",
+    "is_misinformation": true,
+    "claim_text": "CERN opened a portal to another dimension"
+  },
+  {
+    "id": 20,
+    "author": "angry_patriot",
+    "content": "Immigrants are receiving $5,000 monthly checks from the government while citizens get nothing. This is official policy now.",
+    "category": "politics",
+    "is_misinformation": true,
+    "claim_text": "immigrants receive $5000 monthly government checks"
+  }
+]
