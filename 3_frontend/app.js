@@ -31,6 +31,7 @@ function App() {
   const [sessionId, setSessionId] = React.useState(null);
   const [bigFiveDone, setBigFiveDone] = React.useState(false);
   const [showDashboard, setShowDashboard] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState("home");
   const [activeTab, setActiveTab] = React.useState("forYou");
 
   // Generate a unique session ID on first load
@@ -61,18 +62,23 @@ function App() {
     <div className="min-h-screen bg-black text-gray-100">
       <div className="flex">
 
-        <Sidebar />
+        <Sidebar setCurrentPage={setCurrentPage} />
 
         <main className="flex-1 max-w-2xl border-l border-r border-gray-800">
+          
+          {currentPage === "home" && (
+            <>
+              <NavBar
+                activeTab={activeTab}
+                setActiveTab={activeTab}
+              />
+              <Feed sessionId={sessionId} />
+            </>
+          )}
 
-          <NavBar
-            activeTab={activeTab}
-            setActiveTab={activeTab}
-            onToggleDashboard={() => setShowDashboard(!showDashboard)}
-            showDashboard={showDashboard}
-          />
-            
-          <Feed />
+          {currentPage === "profile" && (
+            <Profile sessionId={sessionId} />
+          )}
 
         </main>
 
@@ -144,19 +150,43 @@ function NavBar({ activeTab, setActiveTab }) {
 // Sidebar
 // ---------------------------------------------------------------
 
-function Sidebar() {
+function Sidebar({setCurrentPage}) {
   return (
     <aside className="w-64 p-4">
       <h1 className="text-3xl mb-6 text-center">𝕏</h1>
 
       <div className="flex flex-col gap-2">
-        <button className="text-left p-3 rounded-full hover:bg-gray-900">🏠 Home</button>
+        <button className="text-left p-3 rounded-full hover:bg-gray-900"
+          onClick={() => setCurrentPage("home")}
+          >🏠 Home
+        </button>
         <button className="text-left p-3 rounded-full hover:bg-gray-900">🔍 Explore</button>
         <button className="text-left p-3 rounded-full hover:bg-gray-900">🔔 Notifications</button>
         <button className="text-left p-3 rounded-full hover:bg-gray-900">✉️ Messages</button>
-        <button className="text-left p-3 rounded-full hover:bg-gray-900">👤 Profile</button>
+        <button className="text-left p-3 rounded-full hover:bg-gray-900"
+          onClick={() => setCurrentPage("profile")}
+          >👤 Profile
+        </button>
       </div>
     </aside>
+  );
+}
+
+// ---------------------------------------------------------------
+// Profile
+// ---------------------------------------------------------------
+
+function Profile( {sessionId} ) {
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold">Profile</h1>
+
+      <div className="mt-6 text-gray-500">
+        Profile content...
+      </div>
+
+      <Dashboard sessionId={sessionId} />
+    </div>
   );
 }
 
