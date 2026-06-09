@@ -31,6 +31,7 @@ function App() {
   const [sessionId, setSessionId] = React.useState(null);
   const [bigFiveDone, setBigFiveDone] = React.useState(false);
   const [showDashboard, setShowDashboard] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState("forYou");
 
   // Generate a unique session ID on first load
   React.useEffect(() => {
@@ -62,9 +63,11 @@ function App() {
 
         <Sidebar />
 
-        <main className="flex-1 max-w-2xl">
+        <main className="flex-1 max-w-2xl border-l border-r border-gray-800">
 
           <NavBar
+            activeTab={activeTab}
+            setActiveTab={activeTab}
             onToggleDashboard={() => setShowDashboard(!showDashboard)}
             showDashboard={showDashboard}
           />
@@ -96,18 +99,43 @@ function LoadingScreen() {
 // Navigation Bar
 // ---------------------------------------------------------------
 
-function NavBar({ onToggleDashboard, showDashboard }) {
+function NavBar({ activeTab, setActiveTab }) {
   return (
     <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur border-b border-gray-800">
-      <div className="max-w-2xl mx-auto flex items-center justify-between px-4 py-3">
-        <h1 className="text-xl font-bold">MisinfoFeed</h1>
+
+      <div className="flex">
         <button
-          onClick={onToggleDashboard}
-          className="px-4 py-1.5 rounded-full border border-gray-600 text-sm hover:bg-gray-800 transition"
-        >
-          {showDashboard ? "← Feed" : "📊 Dashboard"}
-        </button>
+              onClick={() => setActiveTab("forYou")}
+              className={`flex-1 py-4 font-semibold transition relative ${
+                activeTab === "forYou"
+                  ? "text-white"
+                  : "text-gray-500 hover:bg-gray-900"
+              }`}
+            >
+              For you
+
+              {activeTab === "forYou" && (
+                <div className="absolute bottom-0 left-1/4 w-1/2 h-1 bg-blue-500 rounded-full" />
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("following")}
+              className={`flex-1 py-4 font-semibold transition relative ${
+                activeTab === "following"
+                  ? "text-white"
+                  : "text-gray-500 hover:bg-gray-900"
+              }`}
+            >
+              Following
+
+              {activeTab === "following" && (
+                <div className="absolute bottom-0 left-1/4 w-1/2 h-1 bg-blue-500 rounded-full" />
+              )}
+
+          </button>
       </div>
+
     </nav>
   );
 }
@@ -118,7 +146,7 @@ function NavBar({ onToggleDashboard, showDashboard }) {
 
 function Sidebar() {
   return (
-    <aside className="w-64 p-4 border-r border-gray-800">
+    <aside className="w-64 p-4">
       <h1 className="text-3xl mb-6 text-center">𝕏</h1>
 
       <div className="flex flex-col gap-2">
