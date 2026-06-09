@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from pydantic import BaseModel, Field
+
 
 @dataclass
 class Post:
@@ -17,15 +19,24 @@ class Claim:
     text: str
 
 
-@dataclass
-class FactCheck:
+class Source(BaseModel):
+    """Data class representing a source within a fact check."""
+
+    publisher_name: str = Field(description="The name of the publisher")
+    publisher_site: str = Field(description="The site of the source publisher")
+    url: str = Field(description="The url of the source")
+    title: str = Field(description="The title of the source")
+    rating: str = Field(description="Whether the claim is true or false")
+
+
+class FactCheck(BaseModel):
     """Data class representing the results of the fact check api."""
 
-    claim_reviewed: str
-    rating: str
-    article_url: str
-    publisher: str
-    article_text: str
+    claim_text: str = Field(description="The claim itself")
+    sources: list[Source] = Field(description="The source for/against a claim")
+    claim_fact_check_date: str = Field(
+        description="When the claim was fact checked"
+    )
 
 
 @dataclass
