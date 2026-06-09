@@ -58,19 +58,21 @@ function App() {
 
   return (
     <div className="min-h-screen bg-black text-gray-100">
-      {/* Top navigation bar */}
-      <NavBar
-        onToggleDashboard={() => setShowDashboard(!showDashboard)}
-        showDashboard={showDashboard}
-      />
+      <div className="flex">
 
-      {/* Main content area */}
-      <div className="max-w-2xl mx-auto">
-        {showDashboard ? (
-          <Dashboard sessionId={sessionId} />
-        ) : (
-          <Feed sessionId={sessionId} />
-        )}
+        <Sidebar />
+
+        <main className="flex-1 max-w-2xl">
+
+          <NavBar
+            onToggleDashboard={() => setShowDashboard(!showDashboard)}
+            showDashboard={showDashboard}
+          />
+            
+          <Feed />
+
+        </main>
+
       </div>
     </div>
   );
@@ -107,6 +109,26 @@ function NavBar({ onToggleDashboard, showDashboard }) {
         </button>
       </div>
     </nav>
+  );
+}
+
+// ---------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------
+
+function Sidebar() {
+  return (
+    <aside className="w-64 p-4 border-r border-gray-800">
+      <h1 className="text-3xl mb-6 text-center">𝕏</h1>
+
+      <div className="flex flex-col gap-2">
+        <button className="text-left p-3 rounded-full hover:bg-gray-900">🏠 Home</button>
+        <button className="text-left p-3 rounded-full hover:bg-gray-900">🔍 Explore</button>
+        <button className="text-left p-3 rounded-full hover:bg-gray-900">🔔 Notifications</button>
+        <button className="text-left p-3 rounded-full hover:bg-gray-900">✉️ Messages</button>
+        <button className="text-left p-3 rounded-full hover:bg-gray-900">👤 Profile</button>
+      </div>
+    </aside>
   );
 }
 
