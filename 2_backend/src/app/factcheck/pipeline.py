@@ -2,13 +2,25 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 
-def extract_claims_from_fb_post():
-    """Receives X posts and extracts the claims of each post.
+from app.factcheck.parser import parse_claims
+from app.factcheck.prompts import create_claim_extraction_prompt
+
+if TYPE_CHECKING:
+    from app.factcheck.claude_client import ClaudeClient
+    from app.factcheck.models import Claim, Post
+
+
+def extract_claims_from_post(client: ClaudeClient, post: Post) -> list[Claim]:
+    """Receives X post and extracts the claims of each post.
 
     Requires LLM.
     """
-    return
+    content = post.content
+    prompt = create_claim_extraction_prompt(content)
+    results = client.ask(prompt)
+    return parse_claims(results)
 
 
 def get_fact_checks():
