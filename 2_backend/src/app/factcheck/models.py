@@ -1,9 +1,18 @@
 """File containing all the data classes."""
 
-from dataclasses import dataclass
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+class VerdictLabel(StrEnum):
+    """Enums for the final rule based verdict."""
+
+    FALSE = "FALSE"
+    MISLEADING = "MISLEADING"
+    DISPUTED = "DISPUTED"
+    UNVERIFIED = "UNVERIFIED"
 
 
 class Post(BaseModel):
@@ -44,7 +53,7 @@ class SourceAlignment(BaseModel):
     """Alignment for a source."""
 
     source: Source
-    verdict: Literal["SUPPORTED", "CONTRADICTED", "UNRELATED"]
+    verdict: Literal["CONTRADICTED", "MISLEADING", "UNVERIFIED"]
 
 
 class AlignmentResult(BaseModel):
@@ -54,21 +63,20 @@ class AlignmentResult(BaseModel):
     alignments: list[SourceAlignment]
 
 
-@dataclass
-class ClaimVerdict:
-    """Data class representing the verdict for a claim."""
+class Verdict(BaseModel):
+    """Data class representing the final verdict for a single claim."""
 
-    claim: Claim
-
-    label: str
-    confidence: float
-
-    supporting_fact_checks: list[FactCheck]
+    claim: Claim = Field(description="The claim that was evaluated")
+    label: VerdictLabel = Field(description="The final verdict label")
+    sources: list[Source] = Field(
+        description="The sources that support the verdict"
+    )
 
 
-@dataclass
-class FinalExplanation:
-    """Data class representing the final explanation, what the user sees."""
+class PostVerdict(BaseModel):
+    """Data class representing the final verdict for an entire post."""
 
-    verdict: ClaimVerdict
-    explanation: str
+    post: Post = Field(description="The original post that was fact checked")
+    verdicts: list[Verdict] = Field(
+        description="The verdict for each claim in the post"
+    )

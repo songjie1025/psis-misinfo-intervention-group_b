@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.factcheck.models import Claim, FactCheck
+    from app.factcheck.models import Claim, FactCheck, PostVerdict
 
 
 def create_claim_extraction_prompt(content: str) -> str:
@@ -23,7 +23,7 @@ def create_claim_extraction_prompt(content: str) -> str:
 
 
 def create_alignment_prompt(claim: Claim, fact_checks: list[FactCheck]) -> str:
-    """Create a prompt to check if fact checks are relevant and align with the claim."""
+    """Create a prompt to check if fact checks align with the claim."""
     fact_checks_str = "\n".join(
         f"[ID {i}] Claim that was disproved: {fc.claim_text} | Evidence title: {fc.source.article_title}"
         for i, fc in enumerate(fact_checks)
@@ -31,12 +31,14 @@ def create_alignment_prompt(claim: Claim, fact_checks: list[FactCheck]) -> str:
     return f"""Given the following claim:
     {claim.content}
 
-    And the following fact checks (note: each fact check may investigate a slightly different but related claim):
+    And the following fact checks (note: each fact check may investigate a
+    slightly different but related claim):
         {fact_checks_str}
 
-    For each fact check, first determine if it is relevant to the claim, then classify it as one of:
+    For each fact check, first determine if it is relevant to the claim, then
+    classify it as one of:
     - CONTRADICTED: the fact check clearly and directly contradicts the claim
-    - MISLEADING: the claim is partially true but missing context or is misleading
+    - MISLEADING: the claim is partially true but missing context/misleading
     - UNVERIFIED: the fact check cannot confirm or deny the claim
 
     Output only a JSON list and nothing else:
@@ -47,5 +49,27 @@ def create_alignment_prompt(claim: Claim, fact_checks: list[FactCheck]) -> str:
     ]"""
 
 
-def create_user_response_prompt():
-    pass
+def create_user_response_prompt(post_verdict: PostVerdict) -> str:
+    """Create a prompt to generate a user explanation of the post verdict."""
+    verdicts_str = "\n\n".join(
+        f"Claim: {verdict.claim.content}\n"
+        f"Verdict: {verdict.label}\n"
+        f"Sources:\n"
+        + "\n".join(
+            f"[{source.publisher_name}]: {source.article_title} ({source.url})"
+            for source in verdict.sources
+        )
+        for verdict in post_verdict.verdicts
+    )
+    return f"""You are a fact-checking assistant. Given the following post and
+    the fact check results for each claim, generate a clear and concise
+    response for the user.
+
+    Original post:
+        {post_verdict.post.content}
+
+    Fact check results:
+        {verdicts_str}
+
+    Write a short, neutral, and informative summary of the fact check results.
+    Do not use bullet points. Write in plain prose, 3-4 sentences maximum."""

@@ -2,59 +2,45 @@
 
 from __future__ import annotations
 
-from enum import StrEnum
+import os
 from typing import TYPE_CHECKING
 
 from app.factcheck.claude_client import ClaudeClient
 from app.factcheck.google_client import FactCheckDbClient
-from app.factcheck.models import AlignmentResult, Claim, Post
-from app.factcheck.parser import parse_alignment_result
+from app.factcheck.models import (
+    AlignmentResult,
+    Claim,
+    Post,
+    PostVerdict,
+    Verdict,
+    VerdictLabel,
+)
+from app.factcheck.parser import parse_alignment_result, parse_claims
 from app.factcheck.prompts import (
     create_alignment_prompt,
     create_claim_extraction_prompt,
+    create_user_response_prompt,
 )
 
 if TYPE_CHECKING:
     from app.factcheck.models import FactCheck
 
-
-class Verdict(StrEnum):
-    """Enums for the final rule based verdict."""
-
-    FALSE = "FALSE"
-    MISLEADING = "MISLEADING"
-    DISPUTED = "DISPUTED"
-    UNVERIFIED = "UNVERIFIED"
-
-
-fact_check_client = FactCheckDbClient(
-    api_key="AIzaSyAVWYPG2QccEP6LTeTFM6Vbp3bAY1K17Tg"
-)
-claude_client = ClaudeClient(api_key="")
+fact_check_client = FactCheckDbClient(api_key=os.environ["GOOGLE_API_KEY"])
+claude_client = ClaudeClient(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 
 def extract_claims_from_post(client: ClaudeClient, post: Post) -> list[Claim]:
-    """Receives X post and extracts the claims of each post.
-
-    Requires LLM.
-    """
-    content = post.content
-    prompt = create_claim_extraction_prompt(content)
-    # results = client.ask(prompt)
-    # return parse_claims(results)
-    return [
-        Claim(content="Scientists confirmed 5G cancer"),
-        Claim(content="Bill Gates COVID vaccines microchips"),
-        Claim(content="Earth's population 10 billion 2030"),
-    ]
+    """Receives X post and extracts the claims of each post."""
+    prompt = create_claim_extraction_prompt(post.content)
+    results = client.ask(prompt)
+    return parse_claims(results)
 
 
 def get_fact_checks_for_single_claim(
     client: FactCheckDbClient, claim: Claim
 ) -> list[FactCheck]:
-    """Find fact checks from the google api or from the internet."""
-    fact_checks = client.get_fact_checks(claim.content)
-    return fact_checks
+    """Find fact checks from the google api for a single claim."""
+    return client.get_fact_checks(claim.content)
 
 
 def align_fact_checks_with_claim(
@@ -70,42 +56,71 @@ def align_fact_checks_with_claim(
     return parse_alignment_result(response, claim, fact_checks)
 
 
-def generate_verdict(alignment_result: AlignmentResult) -> Verdict:
-    """Given all the gathered information, produce a verdict."""
-    relevant_verdicts = {
-        alignment.verdict
-        for alignment in alignment_result.alignments
-        if alignment and alignment.verdict is not None
-    }
+def generate_verdict(
+    claim: Claim, alignment_result: AlignmentResult
+) -> Verdict:
+    """Given all the gathered information, produce a verdict for a claim."""
+    relevant_alignments = [
+        a for a in alignment_result.alignments if a and a.verdict is not None
+    ]
+    relevant_verdicts = {a.verdict for a in relevant_alignments}
+    sources = [a.source for a in relevant_alignments]
 
     if not relevant_verdicts:
-        return Verdict.UNVERIFIED
+        label = VerdictLabel.UNVERIFIED
+    elif relevant_verdicts == {"CONTRADICTED"}:
+        label = VerdictLabel.FALSE
+    elif relevant_verdicts == {"MISLEADING"}:
+        label = VerdictLabel.MISLEADING
+    elif "CONTRADICTED" in relevant_verdicts:
+        label = VerdictLabel.DISPUTED
+    else:
+        label = VerdictLabel.UNVERIFIED
 
-    if relevant_verdicts == {"CONTRADICTED"}:
-        return Verdict.FALSE
-    if relevant_verdicts == {"MISLEADING"}:
-        return Verdict.MISLEADING
-    if "CONTRADICTED" in relevant_verdicts:
-        return Verdict.DISPUTED
-
-    return Verdict.UNVERIFIED
+    return Verdict(claim=claim, label=label, sources=sources)
 
 
-def generate_llm_explanation():
+def generate_post_verdict(
+    claude_client: ClaudeClient,
+    fact_check_client: FactCheckDbClient,
+    post: Post,
+    claims: list[Claim],
+) -> PostVerdict:
+    """Combine all claim verdicts into a single post verdict."""
+    verdicts = []
+    for claim in claims:
+        fact_checks = get_fact_checks_for_single_claim(
+            fact_check_client, claim
+        )
+        if not fact_checks:
+            continue
+        alignment_result = align_fact_checks_with_claim(
+            claude_client, claim, fact_checks
+        )
+        verdict = generate_verdict(claim, alignment_result)
+        verdicts.append(verdict)
+
+    return PostVerdict(post=post, verdicts=verdicts)
+
+
+def generate_llm_explanation(
+    client: ClaudeClient, post_verdict: PostVerdict
+) -> str:
     """Generate the final response for the user."""
-    pass
+    prompt = create_user_response_prompt(post_verdict)
+    return client.ask(prompt)
 
 
 if __name__ == "__main__":
     example_post = Post(
-        content="Scientists have confirmed that 5G towers cause cancer. \
-        Bill Gates admitted that COVID vaccines contain microchips. \
-            The Earth's population will reach 10 billion by 2030."
+        content="Scientists have confirmed that 5G towers cause cancer. "
+        "Bill Gates admitted that COVID vaccines contain microchips. "
+        "The Earth's population will reach 10 billion by 2030."
     )
+
     claims = extract_claims_from_post(client=claude_client, post=example_post)
-    claim = Claim(content="Area51 contains Aliens")
-    fact_checks = get_fact_checks_for_single_claim(fact_check_client, claim)
-    alignments = align_fact_checks_with_claim(
-        claude_client, claim, fact_checks
+    post_verdict = generate_post_verdict(
+        claude_client, fact_check_client, example_post, claims
     )
-    generate_verdict(alignments)
+    explanation = generate_llm_explanation(claude_client, post_verdict)
+    print(explanation)
