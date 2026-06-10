@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 from app.factcheck.claude_client import ClaudeClient
@@ -25,8 +24,8 @@ from app.factcheck.prompts import (
 if TYPE_CHECKING:
     from app.factcheck.models import FactCheck
 
-fact_check_client = FactCheckDbClient(api_key=os.environ["GOOGLE_API_KEY"])
-claude_client = ClaudeClient(api_key=os.environ["ANTHROPIC_API_KEY"])
+fact_check_client = FactCheckDbClient(api_key="")
+claude_client = ClaudeClient(api_key="")
 
 
 def extract_claims_from_post(client: ClaudeClient, post: Post) -> list[Claim]:
