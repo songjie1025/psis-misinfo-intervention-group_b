@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from app.factcheck.google_client import FactCheckDbClient
 from app.factcheck.parser import parse_claims
 from app.factcheck.prompts import create_claim_extraction_prompt
 
 if TYPE_CHECKING:
     from app.factcheck.claude_client import ClaudeClient
-    from app.factcheck.models import Claim, Post
+    from app.factcheck.models import Claim, FactCheck, Post
 
 
 def extract_claims_from_post(client: ClaudeClient, post: Post) -> list[Claim]:
@@ -23,9 +24,12 @@ def extract_claims_from_post(client: ClaudeClient, post: Post) -> list[Claim]:
     return parse_claims(results)
 
 
-def get_fact_checks():
+def get_fact_checks(
+    client: FactCheckDbClient, claims: list[Claim]
+) -> list[list[FactCheck]]:
     """Find fact checks from the google api or from the internet."""
-    pass
+    fact_checks = [client.get_fact_checks(claim.content) for claim in claims]
+    return fact_checks
 
 
 def align_fact_checks_with_claim():

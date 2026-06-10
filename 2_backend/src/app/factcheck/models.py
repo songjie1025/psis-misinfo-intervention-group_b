@@ -5,18 +5,16 @@ from dataclasses import dataclass
 from pydantic import BaseModel, Field
 
 
-@dataclass
-class Post:
+class Post(BaseModel):
     """Data class representing X posts."""
 
-    content: str
+    content: str = Field(description="The textual content of an X post.")
 
 
-@dataclass
-class Claim:
+class Claim(BaseModel):
     """Data class representing extracted claims."""
 
-    text: str
+    content: str = Field(description="The claim")
 
 
 class Source(BaseModel):
