@@ -1,5 +1,4 @@
-"""
-database.py — SQLite Database Setup & Seed Data
+"""database.py — SQLite Database Setup & Seed Data
 
 Creates three tables:
   - users: stores BFI-10 Big Five scores and risk score
@@ -11,9 +10,8 @@ Provides:
   - get_db(): returns a database connection for use in API routes
 """
 
-import sqlite3
-import json
 import os
+import sqlite3
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "app.db")
 
