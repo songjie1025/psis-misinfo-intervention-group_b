@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from app.factcheck.claude_client import ClaudeClient
+from app.factcheck.gemini_client import GeminiClient
 from app.factcheck.google_client import FactCheckDbClient
 from app.factcheck.models import (
     AlignmentResult,
@@ -24,11 +24,8 @@ from app.factcheck.prompts import (
 if TYPE_CHECKING:
     from app.factcheck.models import FactCheck
 
-fact_check_client = FactCheckDbClient(api_key="")
-claude_client = ClaudeClient(api_key="")
 
-
-def extract_claims_from_post(client: ClaudeClient, post: Post) -> list[Claim]:
+def extract_claims_from_post(client: GeminiClient, post: Post) -> list[Claim]:
     """Receives X post and extracts the claims of each post."""
     prompt = create_claim_extraction_prompt(post.content)
     results = client.ask(prompt)
@@ -43,7 +40,7 @@ def get_fact_checks_for_single_claim(
 
 
 def align_fact_checks_with_claim(
-    client: ClaudeClient,
+    client: GeminiClient,
     claim: Claim,
     fact_checks: list[FactCheck],
 ) -> AlignmentResult:
@@ -80,7 +77,7 @@ def generate_verdict(
 
 
 def generate_post_verdict(
-    claude_client: ClaudeClient,
+    gemini_client: GeminiClient,
     fact_check_client: FactCheckDbClient,
     post: Post,
     claims: list[Claim],
@@ -94,7 +91,7 @@ def generate_post_verdict(
         if not fact_checks:
             continue
         alignment_result = align_fact_checks_with_claim(
-            claude_client, claim, fact_checks
+            gemini_client, claim, fact_checks
         )
         verdict = generate_verdict(claim, alignment_result)
         verdicts.append(verdict)
@@ -103,7 +100,7 @@ def generate_post_verdict(
 
 
 def generate_llm_explanation(
-    client: ClaudeClient, post_verdict: PostVerdict
+    client: GeminiClient, post_verdict: PostVerdict
 ) -> str:
     """Generate the final response for the user."""
     prompt = create_user_response_prompt(post_verdict)
@@ -111,15 +108,20 @@ def generate_llm_explanation(
 
 
 if __name__ == "__main__":
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+
     example_post = Post(
         content="Scientists have confirmed that 5G towers cause cancer. "
         "Bill Gates admitted that COVID vaccines contain microchips. "
         "The Earth's population will reach 10 billion by 2030."
     )
 
-    claims = extract_claims_from_post(client=claude_client, post=example_post)
-    post_verdict = generate_post_verdict(
-        claude_client, fact_check_client, example_post, claims
-    )
-    explanation = generate_llm_explanation(claude_client, post_verdict)
+    gemini = GeminiClient(api_key=os.getenv("GEMINI_API_KEY", ""))
+    fc = FactCheckDbClient(api_key=os.getenv("FACT_CHECK_API", ""))
+
+    claims = extract_claims_from_post(client=gemini, post=example_post)
+    post_verdict = generate_post_verdict(gemini, fc, example_post, claims)
+    explanation = generate_llm_explanation(gemini, post_verdict)
     print(explanation)
