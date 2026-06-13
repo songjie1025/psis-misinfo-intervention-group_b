@@ -70,9 +70,12 @@ function App() {
             <>
               <NavBar
                 activeTab={activeTab}
-                setActiveTab={activeTab}
+                setActiveTab={setActiveTab}
               />
-              <Feed sessionId={sessionId} />
+              <Feed 
+                activeTab={activeTab}
+                sessionId={sessionId}
+              />
             </>
           )}
 
@@ -315,7 +318,7 @@ function BigFiveTest({ sessionId, onComplete }) {
 // Feed — Main Timeline (Twitter-style)
 // ---------------------------------------------------------------
 
-function Feed({ sessionId }) {
+function Feed({ sessionId, activeTab }) {
   const [posts, setPosts] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [activeIntervention, setActiveIntervention] = React.useState(null);
@@ -326,7 +329,7 @@ function Feed({ sessionId }) {
   React.useEffect(() => {
     async function loadPosts() {
       try {
-        const res = await fetch(`${API_BASE}/api/posts`);
+        const res = await fetch("./mock-data/posts.json");
         const data = await res.json();
         setPosts(data);
       } catch (err) {
@@ -396,6 +399,15 @@ function Feed({ sessionId }) {
 
   if (loading) {
     return <p className="text-center text-gray-500 mt-20">Loading posts...</p>;
+  }
+
+  // "Following" tab has no posts
+  if (activeTab === "following") {
+    return (
+      <div className="p-8 text-center text-gray-500">
+      No posts available.
+    </div>
+    )
   }
 
   return (
