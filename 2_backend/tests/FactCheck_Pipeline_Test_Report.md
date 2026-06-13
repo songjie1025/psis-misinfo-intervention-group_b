@@ -1,6 +1,6 @@
 # FactCheck Pipeline — Integration Test Report
 
-> PSIS Group B — TruthLens | Tested: 2026-06-11 | Jie Song (Backend)
+> PSIS Group B — XCheck | Tested: 2026-06-11 | Jie Song (Backend)
 
 ---
 
