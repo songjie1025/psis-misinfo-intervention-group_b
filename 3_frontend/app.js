@@ -329,7 +329,7 @@ function Feed({ sessionId, activeTab }) {
   React.useEffect(() => {
     async function loadPosts() {
       try {
-        const res = await fetch("./mock-data/posts.json");
+        const res = await fetch(`${API_BASE}/api/posts`);
         const data = await res.json();
         setPosts(data);
       } catch (err) {
