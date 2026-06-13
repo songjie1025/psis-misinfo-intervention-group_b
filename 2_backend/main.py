@@ -1,7 +1,7 @@
 """
-main.py — TruthLens FastAPI Server
+main.py — XCheck FastAPI Server
 
-Provides 6 API endpoints for the TruthLens prototype:
+Provides 6 API endpoints for the XCheck prototype:
   1. GET  /api/posts                  — Return all mock posts
   2. POST /api/bigfive                — Submit BFI-10 scores, compute risk
   3. POST /api/behavior               — Log user interaction
@@ -35,7 +35,7 @@ load_dotenv()  # Load .env at startup
 # ---------------------------------------------------------------
 
 app = FastAPI(
-    title="TruthLens API",
+    title="XCheck API",
     description="Personalized misinformation intervention — PSIS Group B",
     version="0.1.0",
 )

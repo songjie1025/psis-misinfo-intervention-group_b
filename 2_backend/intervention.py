@@ -1,7 +1,7 @@
 """
 intervention.py — Intervention Selection Engine & Risk Score
 
-This module implements the core personalization logic for TruthLens.
+This module implements the core personalization logic for XCheck.
 It decides WHICH intervention to show based on:
   1. BFI-10 Big Five personality scores
   2. Computed risk score (0–1)
