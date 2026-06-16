@@ -53,6 +53,7 @@ const Controller = {
     const [posts, setPosts] = React.useState([]);
     const [comments, setComments] = React.useState([]);
     const [selectedPostId, setSelectedPostId] = React.useState(null);
+    const [draftText, setDraftText] = React.useState("");
 
     React.useEffect(() => {
       setSessionId(Model.getSessionId());
@@ -98,6 +99,26 @@ const Controller = {
       setComments((prev) => [newComment, ...prev]);
     };
 
+    const handleDraftChange = (value) => {
+      setDraftText(value);
+    };
+
+    const handleCreatePost = () => {
+      if (!draftText.trim()) return;
+      const newPost = {
+        id: "p" + Date.now(),
+        author: "You",
+        username: (sessionId || "you").toString().slice(0, 12),
+        content: draftText.trim(),
+        timestamp: "now",
+        category: "",
+        likes: 0,
+        shares: 0,
+      };
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
+      setDraftText("");
+    };
+
     const handlePostClick = (postId) => {
       setSelectedPostId(postId);
     };
@@ -120,9 +141,12 @@ const Controller = {
       posts,
       comments,
       selectedPostId,
+      draftText,
       handleLike,
       handleShare,
       handleAddComment,
+      handleDraftChange,
+      handleCreatePost,
       handlePostClick,
       handleBackToFeed,
       goToPage,
@@ -292,6 +316,39 @@ function Feed({ posts, activeTab, onCardClick, onLike, onShare }) {
   );
 }
 
+function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
+  return (
+    <div className="px-4 py-4 border-b border-gray-800 bg-black/95">
+      <div className="flex gap-3 items-center">
+        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold text-white">
+          {username.charAt(0).toUpperCase()}
+        </div>
+
+        <textarea
+          value={draftText}
+          onChange={(e) => onDraftChange(e.target.value)}
+          placeholder="What’s happening?"
+          className="flex-1 resize-none bg-transparent border-none p-0 text-lg text-gray-200 outline-none placeholder:text-gray-500"
+        />
+
+        <div className="flex items-center ml-2">
+          <button
+            onClick={onCreatePost}
+            disabled={!draftText.trim()}
+            className={`rounded-full px-4 py-2 text-sm transition ${
+              draftText.trim()
+                ? "bg-white text-black hover:bg-gray-200"
+                : "bg-gray-700 text-gray-500"
+            }`}
+          >
+            Post
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
   const postComments = comments.filter((comment) => String(comment.postId) === String(post.id));
   const [replyText, setReplyText] = React.useState("");
@@ -309,16 +366,16 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
       <div className="px-4 py-3 border-b border-gray-800 bg-black/95 flex items-center gap-4">
         <button
           onClick={onBack}
-          className="rounded-full px-3 py-2 text-sm text-blue-400 hover:bg-white/5"
+          className="rounded-full px-3 py-2 font-bold text-lg text-white-400 hover:bg-white/5"
         >
-          ← Back
+          ←
         </button>
         <div>
-          <h1 className="text-2xl font-bold">Post</h1>
+          <h1 className="text-xl font-bold">Post</h1>
         </div>
       </div>
 
-      <article className="px-4 py-6 border-b border-gray-800">
+      <article className="px-4 py-4 border-b border-gray-800">
         <div className="flex items-start gap-3 mb-3">
           <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold">
             {post.author.charAt(0)}
@@ -341,8 +398,9 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
         </div>
 
         <p className="text-base leading-8 mb-4">{post.content}</p>
+        <div className="pt-4 border-t border-gray-800 -mx-4"></div>
 
-        <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mb-4">
+        <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mb-2">
           <button
             onClick={() => replyRef.current && replyRef.current.focus()}
             className="flex items-center gap-2 hover:text-blue-400 transition"
@@ -374,55 +432,55 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
       </article>
 
       <section className="px-4 py-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold">Replies</h2>
-            <p className="text-sm text-gray-500">{postComments.length} reply{postComments.length === 1 ? "" : "ies"}</p>
-          </div>
-        </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <textarea
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="Reply to this post"
-            className="w-full rounded-2xl bg-gray-900 border border-gray-800 p-3 text-sm text-gray-200 outline-none"
-            rows={3}
+            className="flex-1 resize-none bg-transparent border-none p-0 text-lg text-gray-200 outline-none placeholder:text-gray-500"
+            rows={2}
           />
-          <div className="flex justify-end mt-2">
-            <button
-              onClick={submitReply}
-              className="rounded-full bg-blue-500 px-4 py-2 text-sm text-white"
-            >
-              Reply
-            </button>
-          </div>
+          <button
+            onClick={submitReply}
+            disabled={!replyText.trim()}
+            className={`rounded-full px-4 py-2 text-sm transition ${
+              replyText.trim()
+                ? "bg-white text-black hover:bg-gray-200"
+                : "bg-gray-700 text-gray-500"
+            }`}
+          >
+            Reply
+          </button>
         </div>
 
         {postComments.length === 0 ? (
+          <div className="pt-4 border-t border-gray-800 -mx-4">
           <p className="text-sm text-gray-500">No replies yet.</p>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="pt-4 border-t border-gray-800 -mx-4">
             {postComments.map((comment) => (
-                  <PostCard
-                    key={comment.id}
-                    post={{
-                      id: comment.id,
-                      author: comment.author,
-                      username: comment.username,
-                      content: comment.content,
-                      timestamp: comment.timestamp,
-                      likes: comment.likes || 0,
-                      shares: comment.shares || 0,
-                      category: "",
-                    }}
-                    compact={true}
-                    onCardClick={() => {}}
-                    onComment={() => {}}
-                    onShare={() => {}}
-                    onLike={() => {}}
-                    onBookmark={() => {}}
-                  />
+                    <PostCard
+                      key={comment.id}
+                      post={{
+                        id: comment.id,
+                        author: comment.author,
+                        username: comment.username,
+                        content: comment.content,
+                        timestamp: comment.timestamp,
+                        likes: comment.likes || 0,
+                        shares: comment.shares || 0,
+                        category: "",
+                      }}
+                      compact={true}
+                      onCardClick={() => {}}
+                      onComment={() => {}}
+                      onShare={() => {}}
+                      onLike={() => {}}
+                      onBookmark={() => {}}
+                    />
+
                 ))}
           </div>
         )}
@@ -473,9 +531,12 @@ function App() {
     posts,
     comments,
     selectedPostId,
+    draftText,
     handleLike,
     handleShare,
     handleAddComment,
+    handleDraftChange,
+    handleCreatePost,
     handlePostClick,
     handleBackToFeed,
     goToPage,
@@ -511,6 +572,12 @@ function App() {
                 <h1 className="text-2xl font-bold">Home</h1>
                 <p className="text-sm text-gray-500">A simple X-style homepage mockup.</p>
               </div>
+              <ComposePostBox
+                draftText={draftText}
+                onDraftChange={handleDraftChange}
+                onCreatePost={handleCreatePost}
+                username={(sessionId || "you").toString().slice(0, 12)}
+              />
               <Feed
                 posts={posts}
                 activeTab={activeTab}
