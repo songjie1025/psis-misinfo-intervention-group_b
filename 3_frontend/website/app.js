@@ -1,5 +1,15 @@
 ﻿/**
  * app.js — Mock X-style homepage in MVC structure
+ *
+ * SETUP (one-time):
+ * - Windows: run .\setup.bat
+ * - Mac/Linux: run ./setup.sh
+ * - Or manually: npm install && npm run compile
+ *
+ * RUN:
+ * - npm start (starts Python server on http://localhost:8000)
+ * - Edit this file and run: npm run compile
+ * - Refresh browser to see changes
  */
 
 const Model = {
@@ -92,16 +102,20 @@ function NavBar({ activeTab, onTabChange }) {
       <div className="flex">
         <button
           onClick={() => onTabChange("forYou")}
-          className={`flex-1 py-4 font-semibold transition relative${
-            activeTab === "forYou" ? "text-white" : "text-gray-500 hover:bg-gray-900"
+          className={`flex-1 py-4 font-semibold transition border-b-2 ${
+            activeTab === "forYou"
+              ? "text-white border-blue-500"
+              : "text-gray-500 border-transparent hover:text-white"
           }`}
         >
           For you
         </button>
         <button
           onClick={() => onTabChange("following")}
-          className={`flex-1 py-4 font-semibold transition ${
-            activeTab === "following" ? "text-white" : "text-gray-500 hover:bg-gray-900"
+          className={`flex-1 py-4 font-semibold transition border-b-2 ${
+            activeTab === "following"
+              ? "text-white border-blue-500"
+              : "text-gray-500 border-transparent hover:text-white"
           }`}
         >
           Following
