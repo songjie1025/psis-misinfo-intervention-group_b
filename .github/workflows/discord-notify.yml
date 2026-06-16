@@ -14,28 +14,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send Discord notification
+      - name: Notify Discord
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           EVENT="${{ github.event_name }}"
-          ACTOR="${{ github.actor }}"
-          REPO="${{ github.repository }}"
 
           if [ "$EVENT" = "push" ]; then
-            CONTENT=" **Push** von $ACTOR auf $REPO"
+            CONTENT="Commit
+
+Branch: ${{ github.ref_name }}
+Autor: ${{ github.actor }}
+Nachricht: ${{ github.event.head_commit.message }}
+Link: ${{ github.event.head_commit.url }}"
+
           elif [ "$EVENT" = "create" ]; then
-            CONTENT=" **${{ github.event.ref_type }} erstellt:** ${{ github.event.ref }}"
+            CONTENT="Branch erstellt
+
+Name: ${{ github.event.ref }}
+Autor: ${{ github.actor }}"
+
           elif [ "$EVENT" = "delete" ]; then
-            CONTENT=" **${{ github.event.ref_type }} gelöscht:** ${{ github.event.ref }}"
+            CONTENT="Branch gelöscht
+
+Name: ${{ github.event.ref }}
+Autor: ${{ github.actor }}"
+
           elif [ "$EVENT" = "pull_request" ]; then
-            CONTENT=" Pull Request **${{ github.event.action }}**: #${{ github.event.number }}"
+            CONTENT="Pull Request ${{ github.event.action }}
+
+Titel: ${{ github.event.pull_request.title }}
+Von: ${{ github.event.pull_request.head.ref }}
+Nach: ${{ github.event.pull_request.base.ref }}
+Autor: ${{ github.actor }}
+Link: ${{ github.event.pull_request.html_url }}"
+
           elif [ "$EVENT" = "release" ]; then
-            CONTENT=" Release veröffentlicht: ${{ github.event.release.tag_name }}"
-          else
-            CONTENT=" GitHub Event: $EVENT"
+            CONTENT="Release veröffentlicht
+
+Tag: ${{ github.event.release.tag_name }}
+Name: ${{ github.event.release.name }}
+Link: ${{ github.event.release.html_url }}"
           fi
 
-          curl -H "Content-Type: application/json" \
-               -d "{\"content\":\"$CONTENT\"}" \
-               "$WEBHOOK"
+          jq -n --arg content "$CONTENT" \
+            '{content: $content}' \
+            | curl -H "Content-Type: application/json" \
+                   -d @- \
+                   "$WEBHOOK"
