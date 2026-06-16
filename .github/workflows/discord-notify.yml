@@ -1,0 +1,41 @@
+name: Discord Notifications
+
+on:
+  push:
+  create:
+  delete:
+  pull_request:
+    types: [opened, closed, reopened]
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Discord notification
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          EVENT="${{ github.event_name }}"
+          ACTOR="${{ github.actor }}"
+          REPO="${{ github.repository }}"
+
+          if [ "$EVENT" = "push" ]; then
+            CONTENT="📝 **Push** von $ACTOR auf $REPO"
+          elif [ "$EVENT" = "create" ]; then
+            CONTENT="🌿 **${{ github.event.ref_type }} erstellt:** ${{ github.event.ref }}"
+          elif [ "$EVENT" = "delete" ]; then
+            CONTENT="🗑️ **${{ github.event.ref_type }} gelöscht:** ${{ github.event.ref }}"
+          elif [ "$EVENT" = "pull_request" ]; then
+            CONTENT="🔀 Pull Request **${{ github.event.action }}**: #${{ github.event.number }}"
+          elif [ "$EVENT" = "release" ]; then
+            CONTENT="🚀 Release veröffentlicht: ${{ github.event.release.tag_name }}"
+          else
+            CONTENT="ℹ️ GitHub Event: $EVENT"
+          fi
+
+          curl -H "Content-Type: application/json" \
+               -d "{\"content\":\"$CONTENT\"}" \
+               "$WEBHOOK"
