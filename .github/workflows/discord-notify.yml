@@ -23,17 +23,17 @@ jobs:
           REPO="${{ github.repository }}"
 
           if [ "$EVENT" = "push" ]; then
-            CONTENT="📝 **Push** von $ACTOR auf $REPO"
+            CONTENT=" **Push** von $ACTOR auf $REPO"
           elif [ "$EVENT" = "create" ]; then
-            CONTENT="🌿 **${{ github.event.ref_type }} erstellt:** ${{ github.event.ref }}"
+            CONTENT=" **${{ github.event.ref_type }} erstellt:** ${{ github.event.ref }}"
           elif [ "$EVENT" = "delete" ]; then
-            CONTENT="🗑️ **${{ github.event.ref_type }} gelöscht:** ${{ github.event.ref }}"
+            CONTENT=" **${{ github.event.ref_type }} gelöscht:** ${{ github.event.ref }}"
           elif [ "$EVENT" = "pull_request" ]; then
-            CONTENT="🔀 Pull Request **${{ github.event.action }}**: #${{ github.event.number }}"
+            CONTENT=" Pull Request **${{ github.event.action }}**: #${{ github.event.number }}"
           elif [ "$EVENT" = "release" ]; then
-            CONTENT="🚀 Release veröffentlicht: ${{ github.event.release.tag_name }}"
+            CONTENT=" Release veröffentlicht: ${{ github.event.release.tag_name }}"
           else
-            CONTENT="ℹ️ GitHub Event: $EVENT"
+            CONTENT=" GitHub Event: $EVENT"
           fi
 
           curl -H "Content-Type: application/json" \
