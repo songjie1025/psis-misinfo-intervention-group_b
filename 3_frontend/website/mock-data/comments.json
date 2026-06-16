@@ -1,0 +1,66 @@
+[
+  {
+    "id": "c1",
+    "postId": "1",
+    "author": "Jane Miller",
+    "username": "jane_miller",
+    "content": "This is really important — more people should pay attention. Exercise can make a big difference!",
+    "timestamp": "30m"
+  },
+  {
+    "id": "c2",
+    "postId": "1",
+    "author": "FitFan",
+    "username": "fit_fan",
+    "content": "I've noticed how much regular training improved my blood pressure.",
+    "timestamp": "22m"
+  },
+  {
+    "id": "c3",
+    "postId": "11",
+    "author": "Skeptic",
+    "username": "skeptic001",
+    "content": "That sounds like a typical internet myth. Where's the evidence for this?",
+    "timestamp": "15m"
+  },
+  {
+    "id": "c4",
+    "postId": "11",
+    "author": "DrSmith",
+    "username": "dr_smith",
+    "content": "Claims like that are dangerous. Please rely on evidence-based sources.",
+    "timestamp": "10m"
+  },
+  {
+    "id": "c5",
+    "postId": "3",
+    "author": "AppleFan",
+    "username": "apple_fan23",
+    "content": "Finally a unified connector! Is there an official release date yet?",
+    "timestamp": "1h"
+  },
+  {
+    "id": "c6",
+    "postId": "5",
+    "author": "HealthNews",
+    "username": "health_news",
+    "content": "An effective vaccine for children would be a huge step forward. Hope availability stays high.",
+    "timestamp": "45m"
+  },
+  {
+    "id": "c7",
+    "postId": "7",
+    "author": "CodeMaster",
+    "username": "code_master",
+    "content": "Python is everywhere, but JavaScript still rules the web. 😄",
+    "timestamp": "50m"
+  },
+  {
+    "id": "c8",
+    "postId": "20",
+    "author": "InfoCheck",
+    "username": "info_check",
+    "content": "Be careful with claims like this. There are no official reports supporting it.",
+    "timestamp": "12m"
+  }
+]

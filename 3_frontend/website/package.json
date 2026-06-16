@@ -1,0 +1,14 @@
+{
+  "name": "xcheck-frontend",
+  "version": "1.0.0",
+  "description": "X-style homepage mockup for misinformation intervention",
+  "scripts": {
+    "compile": "babel app.js -o app.compiled.js",
+    "start": "python -m http.server 8000"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/cli": "^7.23.0",
+    "@babel/preset-react": "^7.23.0"
+  }
+}
