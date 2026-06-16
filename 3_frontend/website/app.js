@@ -32,6 +32,17 @@ const Model = {
       return [];
     }
   },
+
+  async fetchComments() {
+    try {
+      const res = await fetch("mock-data/comments.json");
+      if (!res.ok) throw new Error("Failed to load comments");
+      return await res.json();
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  },
 };
 
 const Controller = {
@@ -40,16 +51,22 @@ const Controller = {
     const [activeTab, setActiveTab] = React.useState("forYou");
     const [currentPage, setCurrentPage] = React.useState("home");
     const [posts, setPosts] = React.useState([]);
+    const [comments, setComments] = React.useState([]);
+    const [selectedPostId, setSelectedPostId] = React.useState(null);
 
     React.useEffect(() => {
       setSessionId(Model.getSessionId());
 
-      async function loadPosts() {
-        const posts = await Model.fetchPosts();
+      async function loadData() {
+        const [posts, comments] = await Promise.all([
+          Model.fetchPosts(),
+          Model.fetchComments(),
+        ]);
         setPosts(posts);
+        setComments(comments);
       }
 
-      loadPosts();
+      loadData();
     }, []);
 
     const handleLike = (postId) => {
@@ -68,7 +85,32 @@ const Controller = {
       );
     };
 
-    const goToPage = (page) => setCurrentPage(page);
+    const handleAddComment = (postId, content) => {
+      if (!content || !content.trim()) return;
+      const newComment = {
+        id: "c" + Date.now(),
+        postId: String(postId),
+        author: "You",
+        username: (sessionId || "you").toString().slice(0, 12),
+        content: content.trim(),
+        timestamp: "now",
+      };
+      setComments((prev) => [newComment, ...prev]);
+    };
+
+    const handlePostClick = (postId) => {
+      setSelectedPostId(postId);
+    };
+
+    const handleBackToFeed = () => {
+      setSelectedPostId(null);
+    };
+
+    const goToPage = (page) => {
+      setCurrentPage(page);
+      setSelectedPostId(null);
+    };
+
     const selectTab = (tab) => setActiveTab(tab);
 
     return {
@@ -76,8 +118,13 @@ const Controller = {
       activeTab,
       currentPage,
       posts,
+      comments,
+      selectedPostId,
       handleLike,
       handleShare,
+      handleAddComment,
+      handlePostClick,
+      handleBackToFeed,
       goToPage,
       selectTab,
     };
@@ -135,7 +182,7 @@ function Sidebar({ currentPage, onPageChange }) {
   ];
 
   return (
-    <aside className="w-72 p-4">
+    <aside className="w-72 p-4 sticky top-0 self-start h-screen">
       <div className="text-center mb-8 text-3xl">𝕏</div>
       <div className="space-y-3">
         {items.map((item) => (
@@ -155,38 +202,77 @@ function Sidebar({ currentPage, onPageChange }) {
   );
 }
 
-function PostCard({ post, onLike, onShare }) {
+function PostCard({ post, onCardClick, onComment, onShare, onLike, onBookmark, compact }) {
+  const [bookmarked, setBookmarked] = React.useState(false);
+  const containerClass = compact
+    ? "cursor-auto px-3 py-3 hover:bg-gray-900/50 transition border-b border-gray-800"
+    : "cursor-pointer px-4 py-4 hover:bg-gray-900/50 transition border-b border-gray-800";
+  const avatarClass = compact ? "w-9 h-9" : "w-11 h-11";
+
   return (
-    <article className="px-4 py-4 hover:bg-gray-900/50 transition border-b border-gray-800">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-11 h-11 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold">
+    <article onClick={onCardClick} className={containerClass}>
+      <div className="flex items-start gap-3 mb-3">
+        <div className={`${avatarClass} rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold`}>
           {post.author.charAt(0)}
         </div>
-        <div>
+        <div className="flex-1">
           <div className="flex flex-wrap gap-2 items-center text-sm">
             <span className="font-semibold">{post.author}</span>
             <span className="text-gray-500">@{post.username}</span>
             <span className="text-gray-500">· {post.timestamp}</span>
           </div>
-          <div className="text-xs text-gray-500">{post.category}</div>
+          {!compact && <div className="text-xs text-gray-500">{post.category}</div>}
+          <p className={compact ? "text-sm leading-6 mt-2" : "text-sm leading-7 mt-2"}>{post.content}</p>
+
+          <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mt-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onComment) onComment();
+              }}
+              className="flex items-center gap-2 hover:text-blue-400 transition"
+            >
+              💬
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onShare) onShare(post.id);
+              }}
+              className="flex items-center gap-2 hover:text-indigo-400 transition"
+            >
+              🔄 {post.shares ?? 0}
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onLike) onLike(post.id);
+              }}
+              className="flex items-center gap-2 hover:text-red-400 transition"
+            >
+              ♡ {post.likes ?? 0}
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setBookmarked((b) => !b);
+                if (onBookmark) onBookmark(post.id);
+              }}
+              className="flex items-center gap-2 hover:text-yellow-400 transition"
+            >
+              {bookmarked ? '🔖' : '📑'}
+            </button>
+          </div>
         </div>
-      </div>
-
-      <p className="text-sm leading-7 mb-4">{post.content}</p>
-
-      <div className="flex flex-wrap gap-6 text-sm text-gray-500">
-        <button onClick={onLike} className="flex items-center gap-2 hover:text-blue-400 transition">
-          ♡ {post.likes}
-        </button>
-        <button onClick={onShare} className="flex items-center gap-2 hover:text-green-400 transition">
-          🔄 {post.shares}
-        </button>
       </div>
     </article>
   );
 }
 
-function Feed({ posts, activeTab, onLike, onShare }) {
+function Feed({ posts, activeTab, onCardClick, onLike, onShare }) {
   const displayedPosts = activeTab === "following" ? posts.slice(0, posts.length) : posts;
 
   return (
@@ -195,10 +281,152 @@ function Feed({ posts, activeTab, onLike, onShare }) {
         <PostCard
           key={post.id}
           post={post}
-          onLike={() => onLike(post.id)}
+          onCardClick={() => onCardClick(post.id)}
+          onComment={() => onCardClick(post.id)}
           onShare={() => onShare(post.id)}
+          onLike={() => onLike(post.id)}
+          onBookmark={() => {}}
         />
       ))}
+    </div>
+  );
+}
+
+function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
+  const postComments = comments.filter((comment) => String(comment.postId) === String(post.id));
+  const [replyText, setReplyText] = React.useState("");
+  const replyRef = React.useRef(null);
+  const [postBookmarked, setPostBookmarked] = React.useState(false);
+
+  const submitReply = () => {
+    if (!replyText || !replyText.trim()) return;
+    onAddComment(post.id, replyText.trim());
+    setReplyText("");
+  };
+
+  return (
+    <div>
+      <div className="px-4 py-3 border-b border-gray-800 bg-black/95 flex items-center gap-4">
+        <button
+          onClick={onBack}
+          className="rounded-full px-3 py-2 text-sm text-blue-400 hover:bg-white/5"
+        >
+          ← Back
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold">Post</h1>
+        </div>
+      </div>
+
+      <article className="px-4 py-6 border-b border-gray-800">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold">
+            {post.author.charAt(0)}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <div>
+                <div className="flex flex-wrap gap-2 items-center text-sm">
+                  <span className="font-semibold">{post.author}</span>
+                  <span className="text-gray-500">@{post.username}</span>
+                  <span className="text-gray-500">· {post.timestamp}</span>
+                </div>
+                <div className="text-xs text-gray-500">{post.category}</div>
+              </div>
+              <div className="ml-auto">
+                <button className="rounded-full bg-blue-500/20 text-blue-300 px-3 py-1 text-sm">Follow</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-base leading-8 mb-4">{post.content}</p>
+
+        <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mb-4">
+          <button
+            onClick={() => replyRef.current && replyRef.current.focus()}
+            className="flex items-center gap-2 hover:text-blue-400 transition"
+          >
+            💬
+          </button>
+
+          <button
+            onClick={() => onShare(post.id)}
+            className="flex items-center gap-2 hover:text-indigo-400 transition"
+          >
+            🔄 {post.shares}
+          </button>
+
+          <button
+            onClick={() => onLike(post.id)}
+            className="flex items-center gap-2 hover:text-red-400 transition"
+          >
+            ♡ {post.likes}
+          </button>
+
+          <button
+            onClick={() => setPostBookmarked((b) => !b)}
+            className="flex items-center gap-2 hover:text-yellow-400 transition"
+          >
+            {postBookmarked ? '🔖' : '📑'}
+          </button>
+        </div>
+      </article>
+
+      <section className="px-4 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold">Replies</h2>
+            <p className="text-sm text-gray-500">{postComments.length} reply{postComments.length === 1 ? "" : "ies"}</p>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <textarea
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            placeholder="Reply to this post"
+            className="w-full rounded-2xl bg-gray-900 border border-gray-800 p-3 text-sm text-gray-200 outline-none"
+            rows={3}
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={submitReply}
+              className="rounded-full bg-blue-500 px-4 py-2 text-sm text-white"
+            >
+              Reply
+            </button>
+          </div>
+        </div>
+
+        {postComments.length === 0 ? (
+          <p className="text-sm text-gray-500">No replies yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {postComments.map((comment) => (
+                  <PostCard
+                    key={comment.id}
+                    post={{
+                      id: comment.id,
+                      author: comment.author,
+                      username: comment.username,
+                      content: comment.content,
+                      timestamp: comment.timestamp,
+                      likes: comment.likes || 0,
+                      shares: comment.shares || 0,
+                      category: "",
+                    }}
+                    compact={true}
+                    onCardClick={() => {}}
+                    onComment={() => {}}
+                    onShare={() => {}}
+                    onLike={() => {}}
+                    onBookmark={() => {}}
+                  />
+                ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -243,11 +471,18 @@ function App() {
     currentPage,
     activeTab,
     posts,
+    comments,
+    selectedPostId,
     handleLike,
     handleShare,
+    handleAddComment,
+    handlePostClick,
+    handleBackToFeed,
     goToPage,
     selectTab,
   } = Controller.useAppController();
+
+  const selectedPost = posts.find((post) => post.id === selectedPostId);
 
   if (!sessionId) {
     return <LoadingScreen />;
@@ -260,11 +495,39 @@ function App() {
 
         <main className="flex-1 max-w-2xl border-l border-r border-gray-800">
           <NavBar activeTab={activeTab} onTabChange={selectTab} />
-          <div className="px-4 py-3 border-b border-gray-800 bg-black/95">
-            <h1 className="text-2xl font-bold">Home</h1>
-            <p className="text-sm text-gray-500">A simple X-style homepage mockup.</p>
-          </div>
-          <Feed posts={posts} activeTab={activeTab} onLike={handleLike} onShare={handleShare} />
+
+          {selectedPost ? (
+            <PostDetail
+              post={selectedPost}
+              comments={comments}
+              onLike={handleLike}
+              onShare={handleShare}
+              onBack={handleBackToFeed}
+              onAddComment={handleAddComment}
+            />
+          ) : currentPage === "home" ? (
+            <>
+              <div className="px-4 py-3 border-b border-gray-800 bg-black/95">
+                <h1 className="text-2xl font-bold">Home</h1>
+                <p className="text-sm text-gray-500">A simple X-style homepage mockup.</p>
+              </div>
+              <Feed
+                posts={posts}
+                activeTab={activeTab}
+                onCardClick={handlePostClick}
+                onLike={handleLike}
+                onShare={handleShare}
+              />
+            </>
+          ) : (
+            <div className="px-4 py-6">
+              <div className="px-4 py-3 border-b border-gray-800 bg-black/95">
+                <h1 className="text-2xl font-bold capitalize">{currentPage}</h1>
+                <p className="text-sm text-gray-500">This page is not available yet.</p>
+              </div>
+              <div className="p-6 text-gray-400">Choose Home to view the feed.</div>
+            </div>
+          )}
         </main>
 
         <HomeRightPanel />
