@@ -22,68 +22,47 @@ jobs:
 
           if [ "$EVENT" = "push" ]; then
 
-            COMMITS=$(jq -r '.commits[] | "- " + .message' "$GITHUB_EVENT_PATH")
+            BRANCH="${{ github.ref_name }}"
+            AUTHOR="${{ github.actor }}"
+            MESSAGE="${{ github.event.head_commit.message }}"
+            URL="${{ github.event.head_commit.url }}"
 
-            CONTENT="Push
-
-Repository: ${{ github.repository }}
-Branch: ${{ github.ref_name }}
-Autor: ${{ github.actor }}
-
-Commits:
-$COMMITS"
+            CONTENT="📝 **Neuer Commit**
+             Branch: \`$BRANCH\`
+             Autor: $AUTHOR
+             $MESSAGE
+             $URL"
 
           elif [ "$EVENT" = "create" ]; then
 
-            CONTENT="Branch erstellt
-
-Repository: ${{ github.repository }}
-Name: ${{ github.event.ref }}
-Autor: ${{ github.actor }}"
+            CONTENT=" **Neue ${{ github.event.ref_type }} erstellt**
+            \`${{ github.event.ref }}\`
+             ${{ github.actor }}"
 
           elif [ "$EVENT" = "delete" ]; then
 
-            CONTENT="Branch gelöscht
-
-Repository: ${{ github.repository }}
-Name: ${{ github.event.ref }}
-Autor: ${{ github.actor }}"
+            CONTENT=" **${{ github.event.ref_type }} gelöscht**
+            \`${{ github.event.ref }}\`
+             ${{ github.actor }}"
 
           elif [ "$EVENT" = "pull_request" ]; then
 
-            if [ "${{ github.event.action }}" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
-              STATUS="gemerged"
-            elif [ "${{ github.event.action }}" = "closed" ]; then
-              STATUS="geschlossen"
-            else
-              STATUS="${{ github.event.action }}"
-            fi
-
-            CONTENT="Pull Request $STATUS
-
-Repository: ${{ github.repository }}
-Titel: ${{ github.event.pull_request.title }}
-Von: ${{ github.event.pull_request.head.ref }}
-Nach: ${{ github.event.pull_request.base.ref }}
-Autor: ${{ github.actor }}
-
-Link:
-${{ github.event.pull_request.html_url }}"
+            CONTENT=" **Pull Request ${{ github.event.action }}**
+             ${{ github.event.pull_request.title }}
+             ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}
+             ${{ github.actor }}
+             ${{ github.event.pull_request.html_url }}"
 
           elif [ "$EVENT" = "release" ]; then
 
-            CONTENT="Release veröffentlicht
+            CONTENT=" **Release veröffentlicht**
+             ${{ github.event.release.tag_name }}
+             ${{ github.event.release.name }}
+             ${{ github.event.release.html_url }}"
 
-Repository: ${{ github.repository }}
-Tag: ${{ github.event.release.tag_name }}
-Name: ${{ github.event.release.name }}
-
-Link:
-${{ github.event.release.html_url }}"
           fi
 
-          jq -n \
-            --arg content "$CONTENT" \
+          jq -n --arg content "$CONTENT" \
             '{content: $content}' \
             | curl \
                 -H "Content-Type: application/json" \
