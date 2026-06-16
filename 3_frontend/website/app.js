@@ -198,13 +198,13 @@ function NavBar({ activeTab, onTabChange }) {
 
 function Sidebar({ currentPage, onPageChange }) {
   const items = [
-    { label: "Home", emoji: "🏠", page: "home" },
-    { label: "Explore", emoji: "🔍", page: "explore" },
-    { label: "Notifications", emoji: "🔔", page: "notifications" },
-    { label: "Messages", emoji: " ✉ ", page: "messages" },
+    { label: "Home", emoji: "  ", page: "home" },
+    { label: "Explore", emoji: "  ", page: "explore" },
+    { label: "Notifications", emoji: "  ", page: "notifications" },
+    { label: "Messages", emoji: "  ", page: "messages" },
     { label: "Bookmarks", emoji: "  ", page: "bookmarks" },
-    { label: "Profile", emoji: "👤", page: "profile" },
-    { label: "More", emoji: " . . . ", page: "more" },
+    { label: "Profile", emoji: "  ", page: "profile" },
+    { label: "More", emoji: "  ", page: "more" },
     { label: "Post", emoji: "  ", page: "post" },
   ];
 
