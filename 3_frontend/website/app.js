@@ -201,8 +201,11 @@ function Sidebar({ currentPage, onPageChange }) {
     { label: "Home", emoji: "🏠", page: "home" },
     { label: "Explore", emoji: "🔍", page: "explore" },
     { label: "Notifications", emoji: "🔔", page: "notifications" },
-    { label: "Messages", emoji: "✉", page: "messages" },
+    { label: "Messages", emoji: " ✉ ", page: "messages" },
+    { label: "Bookmarks", emoji: "  ", page: "bookmarks" },
     { label: "Profile", emoji: "👤", page: "profile" },
+    { label: "More", emoji: " . . . ", page: "more" },
+    { label: "Post", emoji: "  ", page: "post" },
   ];
 
   return (
@@ -456,7 +459,7 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
 
         {postComments.length === 0 ? (
           <div className="pt-4 border-t border-gray-800 -mx-4">
-          <p className="text-sm text-gray-500">No replies yet.</p>
+          <p className="px-6 text-sm text-gray-500">No replies yet.</p>
           </div>
         ) : (
           <div className="pt-4 border-t border-gray-800 -mx-4">
@@ -568,10 +571,6 @@ function App() {
             />
           ) : currentPage === "home" ? (
             <>
-              <div className="px-4 py-3 border-b border-gray-800 bg-black/95">
-                <h1 className="text-2xl font-bold">Home</h1>
-                <p className="text-sm text-gray-500">A simple X-style homepage mockup.</p>
-              </div>
               <ComposePostBox
                 draftText={draftText}
                 onDraftChange={handleDraftChange}
