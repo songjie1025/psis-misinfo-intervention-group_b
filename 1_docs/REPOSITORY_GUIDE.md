@@ -1,188 +1,247 @@
-# Repository Structure Guide
+# Repository Guide
 
-Welcome! This document explains how this project is organized and how to get started.
+This document explains how the project is organized, why we structured it
+this way, and how to run it locally for development and demos.
 
 ---
 
-## Folder Overview
+## Project Structure
 
 ```
 psis-misinfo-intervention-group_b/
-├── README.md                 ← Project overview (you are here)
-├── .gitignore                ← Files Git should ignore
-├── 1_docs/                   ← Documentation for the team
-│   └── REPOSITORY_GUIDE.md   ← This file
-├── 2_backend/                ← Python backend (API server)
-│   ├── requirements.txt      ← Python dependencies
-│   ├── main.py               ← FastAPI application with all API routes
-│   └── database.py           ← SQLite database setup + mock post data
-└── 3_frontend/               ← Browser-based mockup (no build step)
-    ├── index.html            ← Entry point — open this in your browser
-    ├── app.js                ← All UI logic (React components)
-    └── mock-data/            ← Content and design docs for the mock platform
-        ├── posts.json        ← 20 mock social media posts
-        └── DESIGN.md         ← Why we made certain design choices
+│
+├── 1_docs/                          ← Documentation
+│
+├── 2_backend/                       ← FastAPI server + business logic
+│   ├── main.py                      ← Entry point + API routes
+│   ├── src/app/
+│   │   ├── database.py              ← SQLite schema (users, behavior_logs)
+│   │   ├── intervention.py          ← Risk score + intervention selection
+│   │   └── factcheck/               ← Misinformation detection pipeline
+│   │       ├── pipeline.py
+│   │       ├── models.py
+│   │       ├── prompts.py
+│   │       ├── parser.py
+│   │       ├── gemini_client.py
+│   │       ├── google_client.py
+│   │       └── claude_client.py
+│   ├── tests/
+│   ├── pyproject.toml / uv.lock
+│   ├── env.example                  ← Template for required API keys
+│   └── .env                         ← Local secrets (gitignored)
+│
+└── 3_frontend/                      ← Everything that runs in the browser
+    │
+    ├── mockup-website/              ← Simulated Twitter environment
+    │   ├── index.html
+    │   ├── app.js                   ← MVC-structured frontend
+    │   ├── package.json             ← Babel for JSX compilation
+    │   └── mock-data/               ← Posts and comments served to users
+    │       ├── posts.json
+    │       ├── comments.json
+    │       └── DESIGN.md
+    │
+    └── browser-extension/           ← Chrome extension (intervention layer)
+        └── (structure TBD — pending framework choice)
 ```
 
 ---
 
-## Backend (`2_backend/`)
+## Structural Rationale
 
-### What Goes Here
+The codebase is split into **two top-level concerns**:
 
-- API route definitions
-- Database models and queries
-- Business logic (risk score calculation, intervention selection, LLM stubs)
+1. **`2_backend/`** — the server (FastAPI + SQLite + factcheck pipeline)
+2. **`3_frontend/`** — everything that runs inside the user's browser
 
-### File Explanations
+Within `3_frontend/`, we have **two tightly coupled components**:
 
-**`requirements.txt`**
-Lists the Python packages needed to run the backend. Install with:
+- **`mockup-website/`** — a controlled simulation of Twitter that we
+  fully own. It serves a fixed set of posts (some true, some
+  misinformation) so that user studies are reproducible. Without this,
+  participants on real Twitter would never see a guaranteed mix of
+  misinformation, and we could not measure intervention effects cleanly.
 
-```bash
-pip install -r requirements.txt
-```
+- **`browser-extension/`** — the actual research tool. It injects into
+  the mockup website, reads posts from the DOM, calls the backend to
+  classify them, and shows personalized interventions to the user.
 
-Currently contains: `fastapi`, `uvicorn`, `httpx`.
+The mockup-website and the browser-extension are **deliberately grouped**
+under `3_frontend/` because they exist for each other: the mockup is the
+controlled environment, and the extension is what we study inside that
+environment. Outside this project they have no independent purpose.
 
-**`main.py`**
-The main FastAPI application. Contains all 6 API endpoints:
+### Frontend Architecture: MVC
 
-| Endpoint                   | Method | Purpose                                          |
-| -------------------------- | ------ | ------------------------------------------------ |
-| `/api/posts`               | GET    | Return all mock posts                            |
-| `/api/detect`              | POST   | Check if a post is misinformation                |
-| `/api/bigfive`             | POST   | Submit BFI-10 personality test scores            |
-| `/api/behavior`            | POST   | Log a user interaction (view, like, share, etc.) |
-| `/api/intervention/{id}`   | GET    | Get personalized intervention for a post         |
-| `/api/dashboard/{session}` | GET    | Return dashboard stats for a user                |
+Both the mockup-website and (eventually) the extension follow an **MVC
+pattern**:
 
-**`database.py`**
-Sets up three SQLite tables (`users`, `posts`, `behavior_logs`) and contains 20 hard-coded mock posts. The `init_db()` function runs automatically when the server starts, creating tables and inserting posts if the database is empty.
+- **Model** — data access (post lists, user session, BFI scores)
+- **View** — presentational React components rendered into the DOM
+- **Controller** — interaction handling and side effects (fetch, state
+  updates)
 
-### How to Run
-
-```bash
-cd 2_backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
-```
-
-Then open http://localhost:8000/docs to see the auto-generated API documentation.
-
-### What to Edit
-
-- To add or change API endpoints → edit `main.py`
-- To add or change mock posts → edit the `MOCK_POSTS` list in `database.py`
-- To change the database schema → edit the `SCHEMA` string in `database.py`
-
----
-
-## Frontend (`3_frontend/`)
-
-### What Goes Here
-
-- HTML, CSS, and JavaScript for the browser-based mockup
-- Mock content data (fake posts)
-
-### File Explanations
-
-**`index.html`**
-The entry point. Open this file directly in Chrome or any modern browser. It loads React, Babel, and Tailwind CSS from CDN (no npm install needed).
-
-**`app.js`**
-Contains the entire frontend application as React components:
-
-| Component             | What It Renders                                          |
-| --------------------- | -------------------------------------------------------- |
-| `App`                 | Root component, manages session and view switching       |
-| `BigFiveTest`         | BFI-10 personality quiz (10 questions, Likert scale)     |
-| `Feed`                | Main Twitter-style timeline, loads posts from backend    |
-| `PostCard`            | Individual post with author, content, like/share buttons |
-| `InterventionDisplay` | Shows one of three intervention types                    |
-| `Dashboard`           | Stats page with topic diversity, misinfo exposure, tips  |
-
-### How to Run
-
-1. Make sure the backend is running (see above)
-2. Open `index.html` in your browser
-3. Complete the BFI-10 personality quiz
-4. Click on posts to trigger misinformation detection
-
-### What to Edit
-
-- To change the UI layout → edit the JSX in `app.js`
-- To add or modify mock posts → edit `mock-data/posts.json`
-- To change styling → edit the `<style>` block in `index.html` or the Tailwind classes in `app.js`
-
----
-
-## Mock Data (`3_frontend/mock-data/`)
-
-**`posts.json`**
-20 fabricated social media posts used by the prototype. 10 are true, 10 are misinformation. Each post has an author, content, category (health/politics/tech/science), and a truth label. The backend reads this file on startup and inserts the posts into the database.
-
-**`DESIGN.md`**
-Documents the design rationale behind key decisions: why we chose Twitter over Facebook, why we use three intervention types, why there are 20 posts, and why we chose a no-build-step frontend. Read this before making major design changes.
+This separation keeps fetch/API logic out of UI components and makes it
+easier to mirror the same architecture between the mockup site and the
+extension.
 
 ---
 
 ## How Everything Connects
 
 ```
-Browser (index.html + app.js)
-    │
-    │  fetch() calls to http://localhost:8000/api/*
-    │
-    ▼
-FastAPI Server (main.py)
-    │
-    │  reads/writes
-    ▼
-SQLite Database (app.db) ← created automatically on first run
-    │
-    │  seeded from
-    ▼
-database.py (MOCK_POSTS list)
+┌──────────────────────────────────────────────────────────────────────┐
+│ One FastAPI process on localhost:8000                                │
+│                                                                      │
+│   /                       → mockup-website/index.html (static)       │
+│   /mock-data/posts.json   → mockup-website/mock-data/...             │
+│   /api/bigfive            → store BFI-10 scores, compute risk        │
+│   /api/behavior           → log user interactions                    │
+│   /api/detect             → factcheck pipeline (Gemini + Google)     │
+│   /api/intervention       → personalized intervention                │
+│   /api/dashboard/{id}     → aggregated stats + tips                  │
+│   /docs                   → auto-generated OpenAPI docs              │
+└──────────────────────────────────────────────────────────────────────┘
+                                  ▲
+                                  │ HTTP
+                                  │
+        ┌─────────────────────────┴──────────────────────────┐
+        │ User's browser                                     │
+        │                                                    │
+        │   ┌─ Mockup tab (localhost:8000) ─┐                │
+        │   │ Twitter-style feed             │                │
+        │   │ rendered from posts.json       │                │
+        │   └────────────────────────────────┘                │
+        │                  ▲                                 │
+        │                  │ DOM injection                   │
+        │                  │                                 │
+        │   ┌─ Browser Extension (installed) ┐               │
+        │   │ Reads DOM, calls backend,       │               │
+        │   │ shows BFI/Intervention/Dashboard│               │
+        │   └─────────────────────────────────┘               │
+        └────────────────────────────────────────────────────┘
 ```
 
-The frontend talks to the backend via HTTP requests. The backend stores everything in a local SQLite file (`app.db`). No external services are needed — everything runs on your computer.
+Key properties:
+
+- **One server, one port.** The backend serves both the API and the
+  mockup as static files. This matches how the extension will work in
+  production (it talks to a single origin) and removes CORS configuration
+  in development.
+- **No posts in the database.** The mockup-website owns the posts; the
+  backend only persists user data (BFI scores, behavior logs).
+- **Detection runs on demand.** When the extension sees a post, it sends
+  the content to `/api/detect`, which runs the factcheck pipeline and
+  returns a verdict + explanation.
 
 ---
 
-## Getting Started (Quick Start)
+## Running the Project Locally
+
+You need **two terminals**: one for the backend (which also serves the
+mockup), and the browser to view the result.
+
+### Prerequisites
+
+- **Python 3.11+** with [`uv`](https://docs.astral.sh/uv/) installed
+- **Node.js 18+** with `npm`
+- A `.env` file inside `2_backend/` containing:
+  ```
+  FACT_CHECK_API="<your Google Fact Check API key>"
+  GEMINI_API_KEY="<your Gemini API key>"
+  ```
+  Use `2_backend/env.example` as a template.
+
+### First-time setup
 
 ```bash
-# 1. Clone the repository
-git clone <repo-url>
-cd psis-misinfo-intervention-group_b
-
-# 2. Start the backend (in one terminal)
+# 1. Install backend dependencies
 cd 2_backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+uv sync
 
-# 3. Open the frontend (in your browser)
-#    Open 3_frontend/index.html directly, OR
-#    cd 3_frontend && python3 -m http.server 3000
-
-# 4. Complete the personality quiz in the browser
-# 5. Click on posts to see interventions
-# 6. Click "Dashboard" in the nav bar to see your stats
+# 2. Install frontend (mockup) dependencies and compile JSX
+cd ../3_frontend/mockup-website
+npm install
+npm run compile
 ```
+
+### Starting the server
+
+```bash
+cd 2_backend
+uv run uvicorn main:app --reload --port 8000
+```
+
+Leave this running. You should see:
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000
+[database] Initialized at .../2_backend/app.db
+```
+
+### Viewing the result in the browser
+
+Open these URLs:
+
+| URL                                      | What you should see                          |
+| ---------------------------------------- | -------------------------------------------- |
+| `http://localhost:8000/`                 | The mockup Twitter feed                      |
+| `http://localhost:8000/docs`             | Interactive API documentation (FastAPI)      |
+| `http://localhost:8000/mock-data/posts.json` | Raw JSON of the mock posts                |
+
+### Re-compiling the frontend after edits
+
+If you edit `3_frontend/mockup-website/app.js`, run:
+
+```bash
+cd 3_frontend/mockup-website
+npm run compile
+```
+
+Then refresh the browser. The backend serves the freshly compiled file
+automatically — no backend restart needed.
+
+### Stopping the server
+
+In the terminal running uvicorn: `Ctrl + C`.
+
+### Resetting the database
+
+The SQLite file (`2_backend/app.db`) is auto-created on first startup.
+To wipe it and start fresh:
+
+```bash
+rm 2_backend/app.db
+```
+
+It will be re-initialized the next time the server starts.
 
 ---
 
-## FAQ
+## What Belongs Where
 
-**Q: Do I need to install Node.js?**
-A: No. The frontend uses React via CDN. Just open `index.html` in a browser.
+| If you want to...                              | Edit...                                              |
+| ---------------------------------------------- | ---------------------------------------------------- |
+| Add or modify an API endpoint                  | `2_backend/main.py`                                  |
+| Change the risk score formula or intervention selection | `2_backend/src/app/intervention.py`         |
+| Modify the factcheck pipeline                  | `2_backend/src/app/factcheck/pipeline.py`            |
+| Change the database schema                     | `2_backend/src/app/database.py`                      |
+| Add or change posts shown in the mockup        | `3_frontend/mockup-website/mock-data/posts.json`     |
+| Modify the mockup UI                           | `3_frontend/mockup-website/app.js` (then re-compile) |
+| Build the actual intervention logic            | `3_frontend/browser-extension/` (TBD)                |
 
-**Q: The frontend shows "Could not connect to backend". What's wrong?**
-A: Make sure the backend is running (`uvicorn main:app --reload --port 8000` in the `2_backend/` folder). The frontend expects the API at `http://localhost:8000`.
+---
 
-**Q: How do I reset the database?**
-A: Delete the `app.db` file in `2_backend/` and restart the server. It will be recreated with fresh mock data.
+## Notes on the Mockup Website
 
-**Q: Where do I add real LLM / ClaimBuster calls?**
-A: In `main.py`, inside the `detect_misinformation()` function. Currently it returns pre-labeled data from the database — replace with API calls to Gemini Flash or ClaimBuster.
+The mockup is **not** a placeholder — it is the experiment environment.
+The choice to use a self-hosted simulated platform (rather than injecting
+the extension into real Twitter) is a deliberate methodological one:
+
+- Twitter's Terms of Service do not allow DOM modification at scale
+- Real feeds cannot guarantee that participants encounter misinformation
+- Reproducibility requires identical content across participants
+- Ethics approval is easier when we control what users are exposed to
+
+See `3_frontend/mockup-website/mock-data/DESIGN.md` for further reasoning
+about the platform and the post selection.

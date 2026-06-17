@@ -460,10 +460,14 @@ def get_dashboard(session_id: str):
 # 6. Static Files — Serve Mockup Website at /
 # ---------------------------------------------------------------
 # Must be mounted AFTER all API routes are defined.
-# Path resolves to <repo>/3_mockup-website regardless of how uvicorn
-# is launched, as long as cwd is 2_backend/.
+# Path resolves to <repo>/3_frontend/mockup-website regardless of how
+# uvicorn is launched, as long as cwd is 2_backend/.
 
-_MOCKUP_DIR = pathlib.Path(__file__).parent.parent / "3_mockup-website"
+_MOCKUP_DIR = (
+    pathlib.Path(__file__).parent.parent
+    / "3_frontend"
+    / "mockup-website"
+)
 if _MOCKUP_DIR.exists():
     app.mount(
         "/",
