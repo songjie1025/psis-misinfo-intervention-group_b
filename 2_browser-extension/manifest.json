@@ -1,0 +1,34 @@
+{
+    "manifest_version": 3,
+    "name": "XCHECK Extension",
+    "version": "1.0",
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "XCHECK Extension"
+    },
+    "permissions": [
+        "storage"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "http://localhost:8000/*",
+                "file:///*"
+            ],
+            "js": [
+                "content-script.js"
+            ],
+            "run_at": "document_end"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "shield.png"
+            ],
+            "matches": [
+                "http://localhost:8000/*"
+            ]
+        }
+    ]
+}
