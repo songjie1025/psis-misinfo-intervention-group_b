@@ -16,7 +16,8 @@ const Model = {
   getSessionId() {
     let id = localStorage.getItem("misinfo_session_id");
     if (!id) {
-      id = "session_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+      id =
+        "session_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
       localStorage.setItem("misinfo_session_id", id);
     }
     return id;
@@ -73,16 +74,16 @@ const Controller = {
     const handleLike = (postId) => {
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
-          post.id === postId ? { ...post, likes: post.likes + 1 } : post
-        )
+          post.id === postId ? { ...post, likes: post.likes + 1 } : post,
+        ),
       );
     };
 
     const handleShare = (postId) => {
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
-          post.id === postId ? { ...post, shares: post.shares + 1 } : post
-        )
+          post.id === postId ? { ...post, shares: post.shares + 1 } : post,
+        ),
       );
     };
 
@@ -90,7 +91,7 @@ const Controller = {
       if (!content || !content.trim()) return;
       const newComment = {
         id: "c" + Date.now(),
-        postId: String(postId),
+        postId: string(postId),
         author: "You",
         username: (sessionId || "you").toString().slice(0, 12),
         content: content.trim(),
@@ -217,7 +218,9 @@ function Sidebar({ currentPage, onPageChange }) {
             key={item.page}
             onClick={() => onPageChange(item.page)}
             className={`w-full text-left rounded-full px-4 py-3 transition ${
-              currentPage === item.page ? "bg-gray-800 text-white" : "text-gray-300 hover:bg-gray-900"
+              currentPage === item.page
+                ? "bg-gray-800 text-white"
+                : "text-gray-300 hover:bg-gray-900"
             }`}
           >
             <span className="mr-3">{item.emoji}</span>
@@ -229,7 +232,15 @@ function Sidebar({ currentPage, onPageChange }) {
   );
 }
 
-function PostCard({ post, onCardClick, onComment, onShare, onLike, onBookmark, compact }) {
+function PostCard({
+  post,
+  onCardClick,
+  onComment,
+  onShare,
+  onLike,
+  onBookmark,
+  compact,
+}) {
   const [bookmarked, setBookmarked] = React.useState(false);
   const containerClass = compact
     ? "cursor-auto px-3 py-3 hover:bg-gray-900/50 transition border-b border-gray-800"
@@ -239,7 +250,9 @@ function PostCard({ post, onCardClick, onComment, onShare, onLike, onBookmark, c
   return (
     <article onClick={onCardClick} className={containerClass}>
       <div className="flex items-start gap-3 mb-3">
-        <div className={`${avatarClass} rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold`}>
+        <div
+          className={`${avatarClass} rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold`}
+        >
           {post.author.charAt(0)}
         </div>
         <div className="flex-1">
@@ -248,8 +261,16 @@ function PostCard({ post, onCardClick, onComment, onShare, onLike, onBookmark, c
             <span className="text-gray-500">@{post.username}</span>
             <span className="text-gray-500">· {post.timestamp}</span>
           </div>
-          {!compact && <div className="text-xs text-gray-500">{post.category}</div>}
-          <p className={compact ? "text-sm leading-6 mt-2" : "text-sm leading-7 mt-2"}>{post.content}</p>
+          {!compact && (
+            <div className="text-xs text-gray-500">{post.category}</div>
+          )}
+          <p
+            className={
+              compact ? "text-sm leading-6 mt-2" : "text-sm leading-7 mt-2"
+            }
+          >
+            {post.content}
+          </p>
 
           <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mt-3">
             <button
@@ -290,7 +311,7 @@ function PostCard({ post, onCardClick, onComment, onShare, onLike, onBookmark, c
               }}
               className="flex items-center gap-2 hover:text-yellow-400 transition"
             >
-              {bookmarked ? '🔖' : '📑'}
+              {bookmarked ? "🔖" : "📑"}
             </button>
           </div>
         </div>
@@ -300,7 +321,8 @@ function PostCard({ post, onCardClick, onComment, onShare, onLike, onBookmark, c
 }
 
 function Feed({ posts, activeTab, onCardClick, onLike, onShare }) {
-  const displayedPosts = activeTab === "following" ? posts.slice(0, posts.length) : posts;
+  const displayedPosts =
+    activeTab === "following" ? posts.slice(0, posts.length) : posts;
 
   return (
     <div>
@@ -353,7 +375,9 @@ function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
 }
 
 function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
-  const postComments = comments.filter((comment) => String(comment.postId) === String(post.id));
+  const postComments = comments.filter(
+    (comment) => String(comment.postId) === String(post.id),
+  );
   const [replyText, setReplyText] = React.useState("");
   const replyRef = React.useRef(null);
   const [postBookmarked, setPostBookmarked] = React.useState(false);
@@ -394,7 +418,9 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
                 <div className="text-xs text-gray-500">{post.category}</div>
               </div>
               <div className="ml-auto">
-                <button className="rounded-full bg-blue-500/20 text-blue-300 px-3 py-1 text-sm">Follow</button>
+                <button className="rounded-full bg-blue-500/20 text-blue-300 px-3 py-1 text-sm">
+                  Follow
+                </button>
               </div>
             </div>
           </div>
@@ -429,13 +455,12 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
             onClick={() => setPostBookmarked((b) => !b)}
             className="flex items-center gap-2 hover:text-yellow-400 transition"
           >
-            {postBookmarked ? '🔖' : '📑'}
+            {postBookmarked ? "🔖" : "📑"}
           </button>
         </div>
       </article>
 
       <section className="px-4 py-6">
-
         <div className="mb-4 flex items-center gap-3">
           <textarea
             value={replyText}
@@ -459,32 +484,31 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
 
         {postComments.length === 0 ? (
           <div className="pt-4 border-t border-gray-800 -mx-4">
-          <p className="px-6 text-sm text-gray-500">No replies yet.</p>
+            <p className="px-6 text-sm text-gray-500">No replies yet.</p>
           </div>
         ) : (
           <div className="pt-4 border-t border-gray-800 -mx-4">
             {postComments.map((comment) => (
-                    <PostCard
-                      key={comment.id}
-                      post={{
-                        id: comment.id,
-                        author: comment.author,
-                        username: comment.username,
-                        content: comment.content,
-                        timestamp: comment.timestamp,
-                        likes: comment.likes || 0,
-                        shares: comment.shares || 0,
-                        category: "",
-                      }}
-                      compact={true}
-                      onCardClick={() => {}}
-                      onComment={() => {}}
-                      onShare={() => {}}
-                      onLike={() => {}}
-                      onBookmark={() => {}}
-                    />
-
-                ))}
+              <PostCard
+                key={comment.id}
+                post={{
+                  id: comment.id,
+                  author: comment.author,
+                  username: comment.username,
+                  content: comment.content,
+                  timestamp: comment.timestamp,
+                  likes: comment.likes || 0,
+                  shares: comment.shares || 0,
+                  category: "",
+                }}
+                compact={true}
+                onCardClick={() => {}}
+                onComment={() => {}}
+                onShare={() => {}}
+                onLike={() => {}}
+                onBookmark={() => {}}
+              />
+            ))}
           </div>
         )}
       </section>
@@ -494,7 +518,11 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
 
 function HomeRightPanel() {
   const trends = [
-    { label: "#ClimateAction", subtitle: "Trending in Environment", count: "24.5K Tweets" },
+    {
+      label: "#ClimateAction",
+      subtitle: "Trending in Environment",
+      count: "24.5K Tweets",
+    },
     { label: "#Design", subtitle: "Trending in X", count: "12.1K Tweets" },
     { label: "#AI", subtitle: "Trending in Technology", count: "38.2K Tweets" },
   ];
@@ -589,9 +617,13 @@ function App() {
             <div className="px-4 py-6">
               <div className="px-4 py-3 border-b border-gray-800 bg-black/95">
                 <h1 className="text-2xl font-bold capitalize">{currentPage}</h1>
-                <p className="text-sm text-gray-500">This page is not available yet.</p>
+                <p className="text-sm text-gray-500">
+                  This page is not available yet.
+                </p>
               </div>
-              <div className="p-6 text-gray-400">Choose Home to view the feed.</div>
+              <div className="p-6 text-gray-400">
+                Choose Home to view the feed.
+              </div>
             </div>
           )}
         </main>
