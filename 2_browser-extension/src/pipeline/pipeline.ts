@@ -6,6 +6,7 @@ import {
   FactCheck,
   Post,
   PostVerdict,
+  UserResponse,
   Verdict,
   VerdictLabel,
 } from "./types";
@@ -109,4 +110,60 @@ export async function generateLlmExplanation(
 ): Promise<string> {
   const prompt = createUserResponsePrompt(postVerdict);
   return client.ask(prompt);
+}
+
+export function factCheck(post: Post): UserResponse {
+  // const claims = await extractClaimsFromPost(geminiClient, post);
+  // const postVerdict = await generatePostVerdict(
+  //   geminiClient,
+  //   factCheckClient,
+  //   post,
+  //   claims,
+  // );
+  // const llmExplanation = generateLlmExplanation(geminiClient, postVerdict);
+
+  return {
+    factCheckText: "This post was flagged as misinformation",
+    verdicts: [
+      {
+        post: { content: "5G causes cancer. Vaccines contain microchips." },
+        verdicts: [
+          {
+            claim: { content: "5G causes cancer" },
+            label: VerdictLabel.FALSE,
+            sources: [
+              {
+                publisherName: "Reuters",
+                publisherSite: "reuters.com",
+                url: "https://reuters.com/1",
+                articleTitle: "Fact check: 5G does not cause cancer",
+                rating: "False",
+              },
+            ],
+          },
+          {
+            claim: { content: "Vaccines contain microchips" },
+            label: VerdictLabel.DISPUTED,
+            sources: [
+              {
+                publisherName: "BBC",
+                publisherSite: "bbc.com",
+                url: "https://bbc.com/1",
+                articleTitle: "No, vaccines do not contain microchips",
+                rating: "False",
+              },
+              {
+                publisherName: "AP News",
+                publisherSite: "apnews.com",
+                url: "https://apnews.com/1",
+                articleTitle:
+                  "Fact check: Vaccine microchip claim is misleading",
+                rating: "Misleading",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
 }

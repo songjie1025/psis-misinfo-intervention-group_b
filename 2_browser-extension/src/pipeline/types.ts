@@ -41,6 +41,11 @@ export type PostVerdict = {
   verdicts: Verdict[];
 };
 
+export type UserResponse = {
+  factCheckText: string;
+  verdicts: PostVerdict[];
+};
+
 export enum VerdictLabel {
   FALSE = "FALSE",
   MISLEADING = "MISLEADING",
