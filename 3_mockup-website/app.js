@@ -644,7 +644,9 @@ function App() {
         <Sidebar currentPage={currentPage} onPageChange={goToPage} />
 
         <main className="flex-1 max-w-2xl border-l border-r border-gray-800">
-          <NavBar activeTab={activeTab} onTabChange={selectTab} />
+          {currentPage === "home" && (
+            <NavBar activeTab={activeTab} onTabChange={selectTab} />
+          )}
 
           {selectedPost ? (
             <PostDetail
