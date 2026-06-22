@@ -47,6 +47,14 @@ const Model = {
 };
 
 const Controller = {
+  initializePostState(post) {
+      return {
+      ...post,
+      liked: false,
+      shared: false,
+    };
+  },
+
   useAppController() {
     const [sessionId, setSessionId] = React.useState(null);
     const [activeTab, setActiveTab] = React.useState("forYou");
@@ -64,7 +72,7 @@ const Controller = {
           Model.fetchPosts(),
           Model.fetchComments(),
         ]);
-        setPosts(posts);
+        setPosts(posts.map(Controller.initializePostState));
         setComments(comments);
       }
 
@@ -72,18 +80,34 @@ const Controller = {
     }, []);
 
     const handleLike = (postId) => {
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId ? { ...post, likes: post.likes + 1 } : post,
-        ),
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id !== postId) return post;
+
+          return {
+            ...post,
+            likes: post.liked
+              ? post.likes - 1
+              : post.likes + 1,
+            liked: !post.liked
+          };
+        })
       );
     };
 
     const handleShare = (postId) => {
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId ? { ...post, shares: post.shares + 1 } : post,
-        ),
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id !== postId) return post;
+
+          return {
+            ...post,
+            shares: post.shared
+              ? post.shares - 1
+              : post.shares + 1,
+            shared: !post.shared
+          };
+        })
       );
     };
 
@@ -91,7 +115,7 @@ const Controller = {
       if (!content || !content.trim()) return;
       const newComment = {
         id: "c" + Date.now(),
-        postId: string(postId),
+        postId: String(postId),
         author: "You",
         username: (sessionId || "you").toString().slice(0, 12),
         content: content.trim(),
@@ -106,7 +130,7 @@ const Controller = {
 
     const handleCreatePost = () => {
       if (!draftText.trim()) return;
-      const newPost = {
+      const newPost = Controller.initializePostState({
         id: "p" + Date.now(),
         author: "You",
         username: (sessionId || "you").toString().slice(0, 12),
@@ -115,7 +139,8 @@ const Controller = {
         category: "",
         likes: 0,
         shares: 0,
-      };
+        isOwnPost: true,
+      });
       setPosts((prevPosts) => [newPost, ...prevPosts]);
       setDraftText("");
     };
@@ -211,7 +236,14 @@ function Sidebar({ currentPage, onPageChange }) {
 
   return (
     <aside className="w-72 p-4 sticky top-0 self-start h-screen">
-      <div className="text-center mb-8 text-3xl">𝕏</div>
+      <div className="text-center mb-8 text-3xl">
+        <button
+          onClick={() => onPageChange("home")}
+          className="text-white"
+        >
+          𝕏
+        </button>
+      </div>
       <div className="space-y-3">
         {items.map((item) => (
           <button
@@ -234,6 +266,7 @@ function Sidebar({ currentPage, onPageChange }) {
 
 function PostCard({
   post,
+  commentCount,
   onCardClick,
   onComment,
   onShare,
@@ -280,7 +313,7 @@ function PostCard({
               }}
               className="flex items-center gap-2 hover:text-blue-400 transition"
             >
-              💬
+              💬 {commentCount ?? 0}
             </button>
 
             <button
@@ -288,9 +321,13 @@ function PostCard({
                 e.stopPropagation();
                 if (onShare) onShare(post.id);
               }}
-              className="flex items-center gap-2 hover:text-indigo-400 transition"
+              className={`flex items-center gap-2 transition ${
+                post.shared
+                  ? "text-green-400"
+                  : "hover:text-indigo-400"
+              }`}
             >
-              🔄 {post.shares ?? 0}
+              ↻ {post.shares ?? 0}
             </button>
 
             <button
@@ -298,7 +335,11 @@ function PostCard({
                 e.stopPropagation();
                 if (onLike) onLike(post.id);
               }}
-              className="flex items-center gap-2 hover:text-red-400 transition"
+              className={`flex items-center gap-2 transition ${
+                post.liked
+                  ? "text-red-400"
+                  : "hover:text-red-400"
+              }`}
             >
               ♡ {post.likes ?? 0}
             </button>
@@ -320,25 +361,42 @@ function PostCard({
   );
 }
 
-function Feed({ posts, activeTab, onCardClick, onLike, onShare }) {
+function Feed({ posts, comments, activeTab, onCardClick, onLike, onShare }) {
   const displayedPosts =
-    activeTab === "following" ? posts.slice(0, posts.length) : posts;
+    activeTab === "following"
+      ? posts.filter(post => post.isOwnPost)
+      : posts;
 
+if (displayedPosts.length === 0) {
   return (
-    <div>
-      {displayedPosts.map((post) => (
+    <p className="p-6 text-gray-400">
+      No posts to display.
+    </p>
+  );
+}
+
+return (
+  <div>
+    {displayedPosts.map((post) => {
+      const commentCount = comments.filter(
+        comment => String(comment.postId) === String(post.id)
+      ).length;
+
+      return (
         <PostCard
           key={post.id}
           post={post}
+          commentCount={commentCount}
           onCardClick={() => onCardClick(post.id)}
           onComment={() => onCardClick(post.id)}
           onShare={() => onShare(post.id)}
           onLike={() => onLike(post.id)}
           onBookmark={() => {}}
         />
-      ))}
-    </div>
-  );
+      );
+    })}
+  </div>
+);
 }
 
 function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
@@ -607,6 +665,7 @@ function App() {
               />
               <Feed
                 posts={posts}
+                comments={comments}
                 activeTab={activeTab}
                 onCardClick={handlePostClick}
                 onLike={handleLike}
