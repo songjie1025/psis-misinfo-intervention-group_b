@@ -52,6 +52,7 @@ const Controller = {
       ...post,
       liked: false,
       shared: false,
+      bookmarked: false,
     };
   },
 
@@ -106,6 +107,19 @@ const Controller = {
               ? post.shares - 1
               : post.shares + 1,
             shared: !post.shared
+          };
+        })
+      );
+    };
+
+    const handleBookmark = (postId) => {
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id !== postId) return post;
+
+          return {
+            ...post,
+            bookmarked: !post.bookmarked
           };
         })
       );
@@ -170,6 +184,7 @@ const Controller = {
       draftText,
       handleLike,
       handleShare,
+      handleBookmark,
       handleAddComment,
       handleDraftChange,
       handleCreatePost,
@@ -586,7 +601,7 @@ function PostCard({
   onBookmark,
   compact,
 }) {
-  const [bookmarked, setBookmarked] = React.useState(false);
+
   const containerClass = compact
     ? "cursor-auto px-3 py-3 hover:bg-gray-900/50 transition border-b border-gray-800"
     : "cursor-pointer px-4 py-4 hover:bg-gray-900/50 transition border-b border-gray-800";
@@ -662,16 +677,15 @@ function PostCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setBookmarked((b) => !b);
                 if (onBookmark) onBookmark(post.id);
               }}
               className={`flex items-center gap-2 transition ${
-                bookmarked
+                post.bookmarked
                   ? "text-sky-500"
                   : "text-white hover:text-sky-500"
               }`}
             >
-              {bookmarked
+              {post.bookmarked
                 ? <BookmarkIconFilledSmall />
                 : <BookmarkIconSmall />}
             </button>
@@ -682,7 +696,7 @@ function PostCard({
   );
 }
 
-function Feed({ posts, comments, activeTab, onCardClick, onLike, onShare }) {
+function Feed({ posts, comments, activeTab, onCardClick, onLike, onShare, onBookmark }) {
   const displayedPosts =
     activeTab === "following"
       ? posts.filter(post => post.isOwnPost)
@@ -712,7 +726,7 @@ return (
           onComment={() => onCardClick(post.id)}
           onShare={() => onShare(post.id)}
           onLike={() => onLike(post.id)}
-          onBookmark={() => {}}
+          onBookmark={() => onBookmark(post.id)}
         />
       );
     })}
@@ -753,14 +767,13 @@ function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
   );
 }
 
-function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
+function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment, onBookmark}) {
   const postComments = comments.filter(
     (comment) => String(comment.postId) === String(post.id),
   );
   const commentCount = postComments.length;
   const [replyText, setReplyText] = React.useState("");
   const replyRef = React.useRef(null);
-  const [postBookmarked, setPostBookmarked] = React.useState(false);
 
   const submitReply = () => {
     if (!replyText || !replyText.trim()) return;
@@ -843,14 +856,14 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
           </button>
 
           <button
-            onClick={() => setPostBookmarked((b) => !b)}
+            onClick={() => onBookmark(post.id)}
             className={`flex items-center gap-2 transition ${
-              postBookmarked
+              post.bookmarked
                 ? "text-sky-500"
                 : "text-white hover:text-sky-500"
             }`}
           >
-            {postBookmarked
+            {post.bookmarked
               ? <BookmarkIconFilledSmall />
               : <BookmarkIconSmall />}
           </button>
@@ -963,6 +976,7 @@ function App() {
     draftText,
     handleLike,
     handleShare,
+    handleBookmark,
     handleAddComment,
     handleDraftChange,
     handleCreatePost,
@@ -995,6 +1009,7 @@ function App() {
               onLike={handleLike}
               onShare={handleShare}
               onBack={handleBackToFeed}
+              onBookmark={handleBookmark}
               onAddComment={handleAddComment}
             />
           ) : currentPage === "home" ? (
@@ -1012,6 +1027,7 @@ function App() {
                 onCardClick={handlePostClick}
                 onLike={handleLike}
                 onShare={handleShare}
+                onBookmark={handleBookmark}
               />
             </>
           ) : (
