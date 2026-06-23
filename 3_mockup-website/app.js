@@ -222,16 +222,225 @@ function NavBar({ activeTab, onTabChange }) {
   );
 }
 
+
+// SVG Icons
+function HomeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 10.5L12 3l9 7.5V21h-6v-6H9v6H3z" />
+    </svg>
+  );
+}
+
+function ExploreIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="16.5" y1="16.5" x2="21" y2="21" />
+    </svg>
+  );
+}
+
+function NotificationIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 16V11a6 6 0 10-12 0v5l-2 2h16z" />
+      <path d="M10 20a2 2 0 004 0" />
+    </svg>
+  );
+}
+
+function MessageIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 5h16v11H7l-3 3z" />
+    </svg>
+  );
+}
+
+function BookmarkIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 3h12v18l-6-4-6 4z" />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" />
+    </svg>
+  );
+}
+
+function MoreIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="currentColor"
+    >
+      <circle cx="6" cy="12" r="1.7" />
+      <circle cx="12" cy="12" r="1.7" />
+      <circle cx="18" cy="12" r="1.7" />
+    </svg>
+  );
+}
+
+function HomeIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M21 10.5L12 3 3 10.5V21h6v-6h6v6h6V10.5z" />
+    </svg>
+  );
+}
+
+function ExploreIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M10.5 3a7.5 7.5 0 105.04 13.06l4.2 4.19 1.41-1.41-4.19-4.2A7.5 7.5 0 0010.5 3z" />
+    </svg>
+  );
+}
+
+function NotificationIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M19 17H5l1.8-2.4V10a5.2 5.2 0 0110.4 0v4.6L19 17zm-7 4a2.5 2.5 0 002.45-2h-4.9A2.5 2.5 0 0012 21z" />
+    </svg>
+  );
+}
+
+function MessageIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M2 5h20v14H6l-4 3V5z" />
+    </svg>
+  );
+}
+
+function BookmarkIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M5 3h14v18l-7-4.5L5 21V3z" />
+    </svg>
+  );
+}
+
+function ProfileIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.7-8 6h16c0-3.3-3.6-6-8-6z" />
+    </svg>
+  );
+}
+
+function MoreIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="8" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="16" cy="12" r="1.5" />
+    </svg>
+  );
+}
+
 function Sidebar({ currentPage, onPageChange }) {
-  const items = [
-    { label: "Home", emoji: "  ", page: "home" },
-    { label: "Explore", emoji: "  ", page: "explore" },
-    { label: "Notifications", emoji: "  ", page: "notifications" },
-    { label: "Messages", emoji: "  ", page: "messages" },
-    { label: "Bookmarks", emoji: "  ", page: "bookmarks" },
-    { label: "Profile", emoji: "  ", page: "profile" },
-    { label: "More", emoji: "  ", page: "more" },
-    { label: "Post", emoji: "  ", page: "post" },
+
+const items = [
+    {
+      label: "Home",
+      icon: HomeIcon,
+      activeIcon: HomeIconFilled,
+      page: "home"
+    },
+    {
+      label: "Explore",
+      icon: ExploreIcon,
+      activeIcon: ExploreIconFilled,
+      page: "explore"
+    },
+    {
+      label: "Notifications",
+      icon: NotificationIcon,
+      activeIcon: NotificationIconFilled,
+      page: "notifications"
+    },
+    {
+      label: "Messages",
+      icon: MessageIcon,
+      activeIcon: MessageIconFilled,
+      page: "messages"
+    },
+    {
+      label: "Bookmarks",
+      icon: BookmarkIcon,
+      activeIcon: BookmarkIconFilled,
+      page: "bookmarks"
+    },
+    {
+      label: "Profile",
+      icon: ProfileIcon,
+      activeIcon: ProfileIconFilled,
+      page: "profile"
+    },
+    {
+      label: "More",
+      icon: MoreIcon,
+      activeIcon: MoreIconFilled,
+      page: "more"
+    },
   ];
 
   return (
@@ -245,20 +454,31 @@ function Sidebar({ currentPage, onPageChange }) {
         </button>
       </div>
       <div className="space-y-3">
-        {items.map((item) => (
-          <button
-            key={item.page}
-            onClick={() => onPageChange(item.page)}
-            className={`w-full text-left rounded-full px-4 py-3 transition ${
-              currentPage === item.page
-                ? "bg-gray-800 text-white"
-                : "text-gray-300 hover:bg-gray-900"
-            }`}
-          >
-            <span className="mr-3">{item.emoji}</span>
-            {item.label}
-          </button>
-        ))}
+        {items.map((item) => {
+          const Icon =
+            currentPage === item.page
+              ? item.activeIcon
+              : item.icon;
+
+          return (
+            <button
+              key={item.page}
+              onClick={() => onPageChange(item.page)}
+              className={`flex items-center gap-4 px-4 py-3 rounded-full transition ${
+                currentPage === item.page
+                  ? "text-white font-bold"
+                  : "text-gray-300 hover:bg-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <Icon />
+                <span className={currentPage === item.page ? "font-bold" : "font-normal"}>
+                  {item.label}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </aside>
   );
