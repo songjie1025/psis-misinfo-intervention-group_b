@@ -294,7 +294,7 @@ function BookmarkIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="w-7 h-7"
+      className="w-5 h-5"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -393,6 +393,97 @@ function MoreIconFilled() {
       <circle cx="8" cy="12" r="1.5" />
       <circle cx="12" cy="12" r="1.5" />
       <circle cx="16" cy="12" r="1.5" />
+    </svg>
+  );
+}
+
+function CommentIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 11.5c0 4.1-3.8 7.5-8.5 7.5-1.1 0-2.2-.2-3.2-.6L4 20l1.2-3.6C4.4 15 3 13.3 3 11.5 3 7.4 6.8 4 11.5 4S20 7.4 20 11.5z" />
+    </svg>
+  );
+}
+
+function RepostIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17 4l4 4-4 4" />
+      <path d="M3 12V8h18" />
+      <path d="M7 20l-4-4 4-4" />
+      <path d="M21 12v4H3" />
+    </svg>
+  );
+}
+
+function LikeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20.5l-1.1-1C5.2 14.4 2 11.6 2 8.1 2 5.3 4.2 3 7 3c1.7 0 3.4.8 5 2.6C13.6 3.8 15.3 3 17 3c2.8 0 5 2.3 5 5.1 0 3.5-3.2 6.3-8.9 11.4L12 20.5z" />
+    </svg>
+  );
+}
+
+function LikeIconFilled() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="currentColor"
+    >
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
+    </svg>
+  );
+}
+
+function BookmarkIconSmall() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7 4.5h10a1 1 0 011 1V20l-6-4-6 4V5.5a1 1 0 011-1z" />
+    </svg>
+  );
+}
+
+function BookmarkIconFilledSmall() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="currentColor"
+    >
+      <path d="M7 4.5h10a1 1 0 011 1V20l-6-4-6 4V5.5a1 1 0 011-1z" />
     </svg>
   );
 }
@@ -534,7 +625,8 @@ function PostCard({
               }}
               className="flex items-center gap-2 hover:text-blue-400 transition"
             >
-              💬 {commentCount ?? 0}
+              <CommentIcon />
+              <span>{commentCount ?? 0}</span>
             </button>
 
             <button
@@ -548,7 +640,8 @@ function PostCard({
                   : "hover:text-indigo-400"
               }`}
             >
-              ↻ {post.shares ?? 0}
+              <RepostIcon />
+              <span>{post.shares ?? 0}</span>
             </button>
 
             <button
@@ -562,7 +655,8 @@ function PostCard({
                   : "hover:text-red-400"
               }`}
             >
-              ♡ {post.likes ?? 0}
+              <LikeIcon />
+              <span>{post.likes ?? 0}</span>
             </button>
 
             <button
@@ -571,9 +665,15 @@ function PostCard({
                 setBookmarked((b) => !b);
                 if (onBookmark) onBookmark(post.id);
               }}
-              className="flex items-center gap-2 hover:text-yellow-400 transition"
+              className={`flex items-center gap-2 transition ${
+                bookmarked
+                  ? "text-sky-500"
+                  : "text-white hover:text-sky-500"
+              }`}
             >
-              {bookmarked ? "🔖" : "📑"}
+              {bookmarked
+                ? <BookmarkIconFilledSmall />
+                : <BookmarkIconSmall />}
             </button>
           </div>
         </div>
@@ -657,6 +757,7 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
   const postComments = comments.filter(
     (comment) => String(comment.postId) === String(post.id),
   );
+  const commentCount = postComments.length;
   const [replyText, setReplyText] = React.useState("");
   const replyRef = React.useRef(null);
   const [postBookmarked, setPostBookmarked] = React.useState(false);
@@ -713,28 +814,45 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
             onClick={() => replyRef.current && replyRef.current.focus()}
             className="flex items-center gap-2 hover:text-blue-400 transition"
           >
-            💬
+            <CommentIcon />
+            <span>{commentCount}</span>
           </button>
 
           <button
             onClick={() => onShare(post.id)}
-            className="flex items-center gap-2 hover:text-indigo-400 transition"
+            className={`flex items-center gap-2 transition ${
+              post.shared
+                ? "text-green-400"
+                : "hover:text-indigo-400"
+            }`}
           >
-            🔄 {post.shares}
+            <RepostIcon />
+            <span>{post.shares ?? 0}</span>
           </button>
 
           <button
             onClick={() => onLike(post.id)}
-            className="flex items-center gap-2 hover:text-red-400 transition"
+            className={`flex items-center gap-2 transition ${
+              post.liked
+                ? "text-red-400"
+                : "hover:text-red-400"
+            }`}
           >
-            ♡ {post.likes}
+            {post.liked ? <LikeIconFilled /> : <LikeIcon />}
+            <span>{post.likes ?? 0}</span>
           </button>
 
           <button
             onClick={() => setPostBookmarked((b) => !b)}
-            className="flex items-center gap-2 hover:text-yellow-400 transition"
+            className={`flex items-center gap-2 transition ${
+              postBookmarked
+                ? "text-sky-500"
+                : "text-white hover:text-sky-500"
+            }`}
           >
-            {postBookmarked ? "🔖" : "📑"}
+            {postBookmarked
+              ? <BookmarkIconFilledSmall />
+              : <BookmarkIconSmall />}
           </button>
         </div>
       </article>
@@ -742,6 +860,7 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
       <section className="px-4 py-6">
         <div className="mb-4 flex items-center gap-3">
           <textarea
+            ref={replyRef}
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="Reply to this post"
