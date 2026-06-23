@@ -47,6 +47,15 @@ const Model = {
 };
 
 const Controller = {
+  initializePostState(post) {
+      return {
+      ...post,
+      liked: false,
+      shared: false,
+      bookmarked: false,
+    };
+  },
+
   useAppController() {
     const [sessionId, setSessionId] = React.useState(null);
     const [activeTab, setActiveTab] = React.useState("forYou");
@@ -64,7 +73,7 @@ const Controller = {
           Model.fetchPosts(),
           Model.fetchComments(),
         ]);
-        setPosts(posts);
+        setPosts(posts.map(Controller.initializePostState));
         setComments(comments);
       }
 
@@ -72,18 +81,47 @@ const Controller = {
     }, []);
 
     const handleLike = (postId) => {
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId ? { ...post, likes: post.likes + 1 } : post,
-        ),
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id !== postId) return post;
+
+          return {
+            ...post,
+            likes: post.liked
+              ? post.likes - 1
+              : post.likes + 1,
+            liked: !post.liked
+          };
+        })
       );
     };
 
     const handleShare = (postId) => {
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId ? { ...post, shares: post.shares + 1 } : post,
-        ),
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id !== postId) return post;
+
+          return {
+            ...post,
+            shares: post.shared
+              ? post.shares - 1
+              : post.shares + 1,
+            shared: !post.shared
+          };
+        })
+      );
+    };
+
+    const handleBookmark = (postId) => {
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id !== postId) return post;
+
+          return {
+            ...post,
+            bookmarked: !post.bookmarked
+          };
+        })
       );
     };
 
@@ -91,7 +129,7 @@ const Controller = {
       if (!content || !content.trim()) return;
       const newComment = {
         id: "c" + Date.now(),
-        postId: string(postId),
+        postId: String(postId),
         author: "You",
         username: (sessionId || "you").toString().slice(0, 12),
         content: content.trim(),
@@ -106,7 +144,7 @@ const Controller = {
 
     const handleCreatePost = () => {
       if (!draftText.trim()) return;
-      const newPost = {
+      const newPost = Controller.initializePostState({
         id: "p" + Date.now(),
         author: "You",
         username: (sessionId || "you").toString().slice(0, 12),
@@ -115,7 +153,8 @@ const Controller = {
         category: "",
         likes: 0,
         shares: 0,
-      };
+        isOwnPost: true,
+      });
       setPosts((prevPosts) => [newPost, ...prevPosts]);
       setDraftText("");
     };
@@ -145,6 +184,7 @@ const Controller = {
       draftText,
       handleLike,
       handleShare,
+      handleBookmark,
       handleAddComment,
       handleDraftChange,
       handleCreatePost,
@@ -197,36 +237,355 @@ function NavBar({ activeTab, onTabChange }) {
   );
 }
 
+
+// SVG Icons
+function HomeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 10.5L12 3l9 7.5V21h-6v-6H9v6H3z" />
+    </svg>
+  );
+}
+
+function ExploreIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="16.5" y1="16.5" x2="21" y2="21" />
+    </svg>
+  );
+}
+
+function NotificationIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 16V11a6 6 0 10-12 0v5l-2 2h16z" />
+      <path d="M10 20a2 2 0 004 0" />
+    </svg>
+  );
+}
+
+function MessageIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 5h16v11H7l-3 3z" />
+    </svg>
+  );
+}
+
+function BookmarkIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 3h12v18l-6-4-6 4z" />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" />
+    </svg>
+  );
+}
+
+function MoreIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-7 h-7"
+      fill="currentColor"
+    >
+      <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="6" cy="12" r="1.7" />
+      <circle cx="12" cy="12" r="1.7" />
+      <circle cx="18" cy="12" r="1.7" />
+    </svg>
+  );
+}
+
+function HomeIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M21 10.5L12 3 3 10.5V21h6v-6h6v6h6V10.5z" />
+    </svg>
+  );
+}
+
+function ExploreIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M10.5 3a7.5 7.5 0 105.04 13.06l4.2 4.19 1.41-1.41-4.19-4.2A7.5 7.5 0 0010.5 3z" />
+    </svg>
+  );
+}
+
+function NotificationIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M19 17H5l1.8-2.4V10a5.2 5.2 0 0110.4 0v4.6L19 17zm-7 4a2.5 2.5 0 002.45-2h-4.9A2.5 2.5 0 0012 21z" />
+    </svg>
+  );
+}
+
+function MessageIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M2 5h20v14H6l-4 3V5z" />
+    </svg>
+  );
+}
+
+function BookmarkIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M5 3h14v18l-7-4.5L5 21V3z" />
+    </svg>
+  );
+}
+
+function ProfileIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.7-8 6h16c0-3.3-3.6-6-8-6z" />
+    </svg>
+  );
+}
+
+function MoreIconFilled() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2"/>
+      <circle cx="8" cy="12" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="16" cy="12" r="1.5" />
+    </svg>
+  );
+}
+
+function CommentIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 11.5c0 4.1-3.8 7.5-8.5 7.5-1.1 0-2.2-.2-3.2-.6L4 20l1.2-3.6C4.4 15 3 13.3 3 11.5 3 7.4 6.8 4 11.5 4S20 7.4 20 11.5z" />
+    </svg>
+  );
+}
+
+function RepostIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17 4l4 4-4 4" />
+      <path d="M3 12V8h18" />
+      <path d="M7 20l-4-4 4-4" />
+      <path d="M21 12v4H3" />
+    </svg>
+  );
+}
+
+function LikeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20.5l-1.1-1C5.2 14.4 2 11.6 2 8.1 2 5.3 4.2 3 7 3c1.7 0 3.4.8 5 2.6C13.6 3.8 15.3 3 17 3c2.8 0 5 2.3 5 5.1 0 3.5-3.2 6.3-8.9 11.4L12 20.5z" />
+    </svg>
+  );
+}
+
+function LikeIconFilled() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="currentColor"
+    >
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
+    </svg>
+  );
+}
+
+function BookmarkIconSmall() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7 4.5h10a1 1 0 011 1V20l-6-4-6 4V5.5a1 1 0 011-1z" />
+    </svg>
+  );
+}
+
+function BookmarkIconFilledSmall() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5"
+      fill="currentColor"
+    >
+      <path d="M7 4.5h10a1 1 0 011 1V20l-6-4-6 4V5.5a1 1 0 011-1z" />
+    </svg>
+  );
+}
+
 function Sidebar({ currentPage, onPageChange }) {
-  const items = [
-    { label: "Home", emoji: "  ", page: "home" },
-    { label: "Explore", emoji: "  ", page: "explore" },
-    { label: "Notifications", emoji: "  ", page: "notifications" },
-    { label: "Messages", emoji: "  ", page: "messages" },
-    { label: "Bookmarks", emoji: "  ", page: "bookmarks" },
-    { label: "Profile", emoji: "  ", page: "profile" },
-    { label: "More", emoji: "  ", page: "more" },
-    { label: "Post", emoji: "  ", page: "post" },
+
+const items = [
+    {
+      label: "Home",
+      icon: HomeIcon,
+      activeIcon: HomeIconFilled,
+      page: "home"
+    },
+    {
+      label: "Explore",
+      icon: ExploreIcon,
+      activeIcon: ExploreIconFilled,
+      page: "explore"
+    },
+    {
+      label: "Notifications",
+      icon: NotificationIcon,
+      activeIcon: NotificationIconFilled,
+      page: "notifications"
+    },
+    {
+      label: "Messages",
+      icon: MessageIcon,
+      activeIcon: MessageIconFilled,
+      page: "messages"
+    },
+    {
+      label: "Bookmarks",
+      icon: BookmarkIcon,
+      activeIcon: BookmarkIconFilled,
+      page: "bookmarks"
+    },
+    {
+      label: "Profile",
+      icon: ProfileIcon,
+      activeIcon: ProfileIconFilled,
+      page: "profile"
+    },
+    {
+      label: "More",
+      icon: MoreIcon,
+      activeIcon: MoreIconFilled,
+      page: "more"
+    },
   ];
 
   return (
     <aside className="w-72 p-4 sticky top-0 self-start h-screen">
-      <div className="text-center mb-8 text-3xl">𝕏</div>
+      <div className="text-center mb-8 text-3xl">
+        <button
+          onClick={() => onPageChange("home")}
+          className="text-white"
+        >
+          𝕏
+        </button>
+      </div>
       <div className="space-y-3">
-        {items.map((item) => (
-          <button
-            key={item.page}
-            onClick={() => onPageChange(item.page)}
-            className={`w-full text-left rounded-full px-4 py-3 transition ${
-              currentPage === item.page
-                ? "bg-gray-800 text-white"
-                : "text-gray-300 hover:bg-gray-900"
-            }`}
-          >
-            <span className="mr-3">{item.emoji}</span>
-            {item.label}
-          </button>
-        ))}
+        {items.map((item) => {
+          const Icon =
+            currentPage === item.page
+              ? item.activeIcon
+              : item.icon;
+
+          return (
+            <button
+              key={item.page}
+              onClick={() => onPageChange(item.page)}
+              className={`flex items-center gap-4 px-4 py-3 rounded-full transition ${
+                currentPage === item.page
+                  ? "text-white font-bold"
+                  : "text-gray-300 hover:bg-gray-900"
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <Icon />
+                <span className={currentPage === item.page ? "font-bold" : "font-normal"}>
+                  {item.label}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </aside>
   );
@@ -234,6 +593,7 @@ function Sidebar({ currentPage, onPageChange }) {
 
 function PostCard({
   post,
+  commentCount,
   onCardClick,
   onComment,
   onShare,
@@ -241,7 +601,7 @@ function PostCard({
   onBookmark,
   compact,
 }) {
-  const [bookmarked, setBookmarked] = React.useState(false);
+
   const containerClass = compact
     ? "cursor-auto px-3 py-3 hover:bg-gray-900/50 transition border-b border-gray-800"
     : "cursor-pointer px-4 py-4 hover:bg-gray-900/50 transition border-b border-gray-800";
@@ -280,7 +640,8 @@ function PostCard({
               }}
               className="flex items-center gap-2 hover:text-blue-400 transition"
             >
-              💬
+              <CommentIcon />
+              <span>{commentCount ?? 0}</span>
             </button>
 
             <button
@@ -288,9 +649,14 @@ function PostCard({
                 e.stopPropagation();
                 if (onShare) onShare(post.id);
               }}
-              className="flex items-center gap-2 hover:text-indigo-400 transition"
+              className={`flex items-center gap-2 transition ${
+                post.shared
+                  ? "text-green-400"
+                  : "hover:text-indigo-400"
+              }`}
             >
-              🔄 {post.shares ?? 0}
+              <RepostIcon />
+              <span>{post.shares ?? 0}</span>
             </button>
 
             <button
@@ -298,20 +664,30 @@ function PostCard({
                 e.stopPropagation();
                 if (onLike) onLike(post.id);
               }}
-              className="flex items-center gap-2 hover:text-red-400 transition"
+              className={`flex items-center gap-2 transition ${
+                post.liked
+                  ? "text-red-400"
+                  : "hover:text-red-400"
+              }`}
             >
-              ♡ {post.likes ?? 0}
+              <LikeIcon />
+              <span>{post.likes ?? 0}</span>
             </button>
 
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setBookmarked((b) => !b);
                 if (onBookmark) onBookmark(post.id);
               }}
-              className="flex items-center gap-2 hover:text-yellow-400 transition"
+              className={`flex items-center gap-2 transition ${
+                post.bookmarked
+                  ? "text-sky-500"
+                  : "text-white hover:text-sky-500"
+              }`}
             >
-              {bookmarked ? "🔖" : "📑"}
+              {post.bookmarked
+                ? <BookmarkIconFilledSmall />
+                : <BookmarkIconSmall />}
             </button>
           </div>
         </div>
@@ -320,25 +696,42 @@ function PostCard({
   );
 }
 
-function Feed({ posts, activeTab, onCardClick, onLike, onShare }) {
+function Feed({ posts, comments, activeTab, onCardClick, onLike, onShare, onBookmark }) {
   const displayedPosts =
-    activeTab === "following" ? posts.slice(0, posts.length) : posts;
+    activeTab === "following"
+      ? posts.filter(post => post.isOwnPost)
+      : posts;
 
+if (displayedPosts.length === 0) {
   return (
-    <div>
-      {displayedPosts.map((post) => (
+    <p className="p-6 text-gray-400">
+      No posts to display.
+    </p>
+  );
+}
+
+return (
+  <div>
+    {displayedPosts.map((post) => {
+      const commentCount = comments.filter(
+        comment => String(comment.postId) === String(post.id)
+      ).length;
+
+      return (
         <PostCard
           key={post.id}
           post={post}
+          commentCount={commentCount}
           onCardClick={() => onCardClick(post.id)}
           onComment={() => onCardClick(post.id)}
           onShare={() => onShare(post.id)}
           onLike={() => onLike(post.id)}
-          onBookmark={() => {}}
+          onBookmark={() => onBookmark(post.id)}
         />
-      ))}
-    </div>
-  );
+      );
+    })}
+  </div>
+);
 }
 
 function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
@@ -374,13 +767,13 @@ function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
   );
 }
 
-function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
+function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment, onBookmark}) {
   const postComments = comments.filter(
     (comment) => String(comment.postId) === String(post.id),
   );
+  const commentCount = postComments.length;
   const [replyText, setReplyText] = React.useState("");
   const replyRef = React.useRef(null);
-  const [postBookmarked, setPostBookmarked] = React.useState(false);
 
   const submitReply = () => {
     if (!replyText || !replyText.trim()) return;
@@ -434,28 +827,45 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
             onClick={() => replyRef.current && replyRef.current.focus()}
             className="flex items-center gap-2 hover:text-blue-400 transition"
           >
-            💬
+            <CommentIcon />
+            <span>{commentCount}</span>
           </button>
 
           <button
             onClick={() => onShare(post.id)}
-            className="flex items-center gap-2 hover:text-indigo-400 transition"
+            className={`flex items-center gap-2 transition ${
+              post.shared
+                ? "text-green-400"
+                : "hover:text-indigo-400"
+            }`}
           >
-            🔄 {post.shares}
+            <RepostIcon />
+            <span>{post.shares ?? 0}</span>
           </button>
 
           <button
             onClick={() => onLike(post.id)}
-            className="flex items-center gap-2 hover:text-red-400 transition"
+            className={`flex items-center gap-2 transition ${
+              post.liked
+                ? "text-red-400"
+                : "hover:text-red-400"
+            }`}
           >
-            ♡ {post.likes}
+            {post.liked ? <LikeIconFilled /> : <LikeIcon />}
+            <span>{post.likes ?? 0}</span>
           </button>
 
           <button
-            onClick={() => setPostBookmarked((b) => !b)}
-            className="flex items-center gap-2 hover:text-yellow-400 transition"
+            onClick={() => onBookmark(post.id)}
+            className={`flex items-center gap-2 transition ${
+              post.bookmarked
+                ? "text-sky-500"
+                : "text-white hover:text-sky-500"
+            }`}
           >
-            {postBookmarked ? "🔖" : "📑"}
+            {post.bookmarked
+              ? <BookmarkIconFilledSmall />
+              : <BookmarkIconSmall />}
           </button>
         </div>
       </article>
@@ -463,6 +873,7 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment }) {
       <section className="px-4 py-6">
         <div className="mb-4 flex items-center gap-3">
           <textarea
+            ref={replyRef}
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="Reply to this post"
@@ -565,6 +976,7 @@ function App() {
     draftText,
     handleLike,
     handleShare,
+    handleBookmark,
     handleAddComment,
     handleDraftChange,
     handleCreatePost,
@@ -586,7 +998,9 @@ function App() {
         <Sidebar currentPage={currentPage} onPageChange={goToPage} />
 
         <main className="flex-1 max-w-2xl border-l border-r border-gray-800">
-          <NavBar activeTab={activeTab} onTabChange={selectTab} />
+          {currentPage === "home" && (
+            <NavBar activeTab={activeTab} onTabChange={selectTab} />
+          )}
 
           {selectedPost ? (
             <PostDetail
@@ -595,6 +1009,7 @@ function App() {
               onLike={handleLike}
               onShare={handleShare}
               onBack={handleBackToFeed}
+              onBookmark={handleBookmark}
               onAddComment={handleAddComment}
             />
           ) : currentPage === "home" ? (
@@ -607,10 +1022,12 @@ function App() {
               />
               <Feed
                 posts={posts}
+                comments={comments}
                 activeTab={activeTab}
                 onCardClick={handlePostClick}
                 onLike={handleLike}
                 onShare={handleShare}
+                onBookmark={handleBookmark}
               />
             </>
           ) : (
