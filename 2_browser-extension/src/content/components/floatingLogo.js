@@ -1,4 +1,6 @@
 // Floating Logo Component
+console.log("floatingLogo.js loaded");
+
 
 function createFloatingLogo() {
     // div-Element für das Logo
@@ -34,7 +36,7 @@ function createFloatingLogo() {
     // Logo einsetzen
 
     // Holt den sicheren internen Chrome-Pfad für das Bild
-    const imgUrl = chrome.runtime.getURL('shield.png');
+    const imgUrl = chrome.runtime.getURL('src/assets/shield.png');
 
     // Fügt das Bild ein und sorgt dafür, dass es perfekt in den Kreis passt
     logoBadge.innerHTML = `
@@ -45,7 +47,7 @@ function createFloatingLogo() {
     return logoBadge;
 }
 
-export function injectFloatingLogo() {
+function injectFloatingLogo() {
     // Prüfen, ob das Logo nicht schon da ist
     if (document.getElementById('xcheck-floating-logo')) {
         return;

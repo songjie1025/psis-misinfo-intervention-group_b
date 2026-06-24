@@ -16,6 +16,7 @@
                 "file:///*"
             ],
             "js": [
+                "src/content/components/floatingLogo.js",
                 "src/content/content-script.js"
             ],
             "run_at": "document_end"
@@ -24,7 +25,7 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "src/content/assets/shield.png"
+                "src/assets/shield.png"
             ],
             "matches": [
                 "http://localhost:8000/*"
