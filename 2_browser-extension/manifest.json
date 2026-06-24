@@ -3,7 +3,7 @@
     "name": "XCHECK Extension",
     "version": "1.0",
     "action": {
-        "default_popup": "popup.html",
+        "default_popup": "src/popup/popup.html",
         "default_title": "XCHECK Extension"
     },
     "permissions": [
@@ -16,7 +16,7 @@
                 "file:///*"
             ],
             "js": [
-                "content-script.js"
+                "src/content/content-script.js"
             ],
             "run_at": "document_end"
         }
@@ -24,7 +24,7 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "shield.png"
+                "src/content/assets/shield.png"
             ],
             "matches": [
                 "http://localhost:8000/*"
