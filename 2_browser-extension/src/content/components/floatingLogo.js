@@ -1,6 +1,6 @@
-// Prüfen, ob das Logo nicht schon da ist
-if (!document.getElementById('xcheck-floating-logo')) {
+// Floating Logo Component
 
+function createFloatingLogo() {
     // div-Element für das Logo
     const logoBadge = document.createElement('div');
     logoBadge.id = 'xcheck-floating-logo';
@@ -37,10 +37,21 @@ if (!document.getElementById('xcheck-floating-logo')) {
     const imgUrl = chrome.runtime.getURL('shield.png');
 
     // Fügt das Bild ein und sorgt dafür, dass es perfekt in den Kreis passt
-    logoBadge.innerHTML = `<img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />`;
+    logoBadge.innerHTML = `
+        <img src="${imgUrl}"
+            style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />
+    `;
 
-    // Das Logo in die Website einfügen
-    document.body.appendChild(logoBadge);
+    return logoBadge;
+}
 
+export function injectFloatingLogo() {
+    // Prüfen, ob das Logo nicht schon da ist
+    if (document.getElementById('xcheck-floating-logo')) {
+        return;
+    }
+
+    const logo = createFloatingLogo();
+    document.body.appendChild(logo);
     console.log("XCHECK Floating Logo erfolgreich geladen!");
 }
