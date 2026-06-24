@@ -1,6 +1,15 @@
-// Floating Logo Component
-console.log("floatingLogo.js loaded");
+/**
+ * FLOATING LOGO COMPONENT
+ *
+ * Creates and injects a floating logo UI element into the webpage.
+ * This is a pure UI component responsible only for rendering and styling
+ * the floating badge element.
+ *
+ * USAGE:
+ * - injectFloatingLogo() -> creates and appends the floating logo to the DOM if it doesn't already exist
+ */
 
+console.log("floatingLogo.js loaded");
 
 function createFloatingLogo() {
     // div-Element für das Logo
