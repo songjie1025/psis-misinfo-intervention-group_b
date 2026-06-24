@@ -9,6 +9,13 @@
     "permissions": [
         "storage"
     ],
+    "host_permissions": [
+        "https://generativelanguage.googleapis.com/*",
+        "https://factchecktools.googleapis.com/*"
+    ],
+    "background": {
+        "service_worker": "dist/background.js"
+    },
     "content_scripts": [
         {
             "matches": [
@@ -16,7 +23,7 @@
                 "file:///*"
             ],
             "js": [
-                "content-script.js"
+                "dist/content-script.js"
             ],
             "run_at": "document_end"
         }

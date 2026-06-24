@@ -3,6 +3,8 @@
     "target": "ES6",
     "module": "commonjs",
     "strict": true,
-    "types": ["jest"]
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["jest", "chrome"]
   }
 }

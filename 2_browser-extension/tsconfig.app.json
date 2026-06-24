@@ -1,0 +1,17 @@
+{
+  "//": "Browser/extension type-check config. esbuild does the actual compile; this only type-checks src.",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "lib": ["ES2020", "DOM"],
+    "types": ["chrome"],
+    "rootDir": "src",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*.ts"]
+}

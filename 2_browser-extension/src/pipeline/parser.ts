@@ -5,11 +5,14 @@ export function parseClaims(response: string): Claim[] {
 
   if (claimsStr.includes("[") && claimsStr.includes("]")) {
     const start = claimsStr.indexOf("[");
-    const end = claimsStr.indexOf("]");
+    const end = claimsStr.lastIndexOf("]");
     claimsStr = claimsStr.slice(start + 1, end);
   }
 
-  return claimsStr.split("|").map((claim) => ({ content: claim.trim() }));
+  return claimsStr
+    .split("|")
+    .map((claim) => ({ content: claim.trim() }))
+    .filter((claim) => claim.content.length > 0);
 }
 
 export function parseAlignmentResult(
@@ -19,11 +22,20 @@ export function parseAlignmentResult(
 ): AlignmentResult {
   const start = response.indexOf("[");
   const end = response.lastIndexOf("]") + 1;
-  const verdicts = JSON.parse(response.slice(start, end)) as {
+
+  let verdicts: {
     id: number;
     verdict: "CONTRADICTED" | "MISLEADING" | "UNVERIFIED";
     relevant: boolean;
   }[];
+
+  try {
+    if (start < 0 || end <= start) throw new Error("no JSON array in response");
+    verdicts = JSON.parse(response.slice(start, end));
+  } catch {
+    // Malformed LLM output → treat as "no usable alignment" instead of crashing.
+    return { claim: claim.content, alignments: [] };
+  }
 
   const alignments: SourceAlignment[] = verdicts
     .filter((v) => v.id < factChecks.length && v.relevant)
