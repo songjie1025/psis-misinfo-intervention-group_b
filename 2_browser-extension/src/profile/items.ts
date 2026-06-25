@@ -15,8 +15,8 @@ export const BIG_FIVE_ITEMS: QuestionnaireItem[] = [
   { id: "bfi_o2", text: "I see myself as someone who has an active imagination.", trait: "openness", reverse: false, optional: false },
 ];
 
-// NFCC short scale (Need for Cognitive Closure). OPTIONAL.
-// NOTE: instrument choice is current but NOT final — see REQUIREMENTS §9.
+// NFCC short scale — DROPPED for this version (2026-06-25 meeting). Kept here, but NOT part of
+// ALL_ITEMS, so it is not asked. Re-add to ALL_ITEMS if NFCC is brought back later.
 export const NFCC_ITEMS: QuestionnaireItem[] = [
   { id: "nfcc_1", text: "I don't like situations that are uncertain.", trait: "nfcc", reverse: false, optional: true },
   { id: "nfcc_2", text: "I dislike questions that can be answered in many different ways.", trait: "nfcc", reverse: false, optional: true },
@@ -25,13 +25,14 @@ export const NFCC_ITEMS: QuestionnaireItem[] = [
   { id: "nfcc_5", text: "I dislike it when someone's statement could mean many different things.", trait: "nfcc", reverse: false, optional: true },
 ];
 
-export const ALL_ITEMS: QuestionnaireItem[] = [...BIG_FIVE_ITEMS, ...NFCC_ITEMS];
+// Current version asks the BFI-10 only (+ the optional political question below).
+export const ALL_ITEMS: QuestionnaireItem[] = [...BIG_FIVE_ITEMS];
 
-// Optional single-choice political-orientation question.
-// Stored locally only and NEVER sent to the LLM (§6).
+// Optional single-choice political-orientation question. left / right, or skipped (no-answer).
+// NOTE: a finer-grained scale (strong vs. slight lean) is a planned future enhancement (REQUIREMENTS §9).
 export const POLITICAL_QUESTION = {
   id: "political_orientation",
   text: "Politically, where would you place yourself? (optional)",
-  options: ["left", "center", "right"] as const,
+  options: ["left", "right"] as const,
   optional: true,
 };

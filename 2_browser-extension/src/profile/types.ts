@@ -1,6 +1,8 @@
 // Personality profiling types (FR1, FR2).
 
-export type TraitLevel = "low" | "medium" | "high";
+// Two-band model with a neutral midpoint, aligned with the BFI-10 scoring in Tolga's research:
+// trait average < 3 = low, > 3 = high, exactly 3 = neutral.
+export type TraitLevel = "low" | "neutral" | "high";
 
 export type BigFiveTrait =
   | "openness"
@@ -30,15 +32,20 @@ export interface TraitScores {
   extraversion: number;
   agreeableness: number;
   neuroticism: number;
+  // NFCC is NOT collected in the current version (dropped at the 2026-06-25 meeting).
+  // Field kept optional so the code path is reversible if NFCC is re-added later.
   nfcc?: number;
 }
 
-export type PoliticalOrientation = "left" | "center" | "right";
+// Political orientation: left / right (no-answer = the value is simply absent).
+// The finer-grained scale (strong vs. slight lean) is a future enhancement — see REQUIREMENTS §9.
+export type PoliticalOrientation = "left" | "right";
 
 /**
- * LLM-safe abstract profile: ONLY anonymized trait levels.
- * Political orientation is intentionally EXCLUDED here — by design it can never reach the
- * LLM, because the wording layer only ever receives a PersonalityProfile (FR6, §6).
+ * Abstract personality profile = Big Five trait levels only.
+ * Political orientation is handled SEPARATELY (passed alongside this profile to the prompt
+ * layer). It MAY now be used to adapt prompts: user identity is protected by ID-anonymisation
+ * of requests, so sending tone guidance derived from it does not expose who the user is.
  */
 export interface PersonalityProfile {
   openness: TraitLevel;
@@ -46,5 +53,5 @@ export interface PersonalityProfile {
   extraversion: TraitLevel;
   agreeableness: TraitLevel;
   neuroticism: TraitLevel;
-  nfcc?: TraitLevel;
+  nfcc?: TraitLevel; // unused in current version (see note on TraitScores)
 }

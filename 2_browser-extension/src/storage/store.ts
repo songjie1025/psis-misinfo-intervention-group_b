@@ -15,12 +15,18 @@ async function set(key: string, value: unknown): Promise<void> {
 
 // Lightweight runtime guards: stored data from an older schema version must not
 // silently pass as valid (e.g. a missing numeric score → NaN → wrong risk band).
+const VALID_LEVELS = new Set<string>(["low", "neutral", "high"]);
+
 function isProfile(v: unknown): v is PersonalityProfile {
   return (
     typeof v === "object" &&
     v !== null &&
-    typeof (v as PersonalityProfile).openness === "string"
+    VALID_LEVELS.has((v as PersonalityProfile).openness)
   );
+}
+
+function isPolitical(v: unknown): v is PoliticalOrientation {
+  return v === "left" || v === "right";
 }
 
 function isRiskState(v: unknown): v is RiskState {
@@ -39,7 +45,10 @@ export const store = {
   },
   setProfile: (p: PersonalityProfile) => set(STORAGE_KEYS.profile, p),
 
-  getPolitical: () => get<PoliticalOrientation>(STORAGE_KEYS.political),
+  getPolitical: async (): Promise<PoliticalOrientation | null> => {
+    const v = await get<unknown>(STORAGE_KEYS.political);
+    return isPolitical(v) ? v : null;
+  },
   setPolitical: (p: PoliticalOrientation) => set(STORAGE_KEYS.political, p),
 
   getRiskState: async (): Promise<RiskState | null> => {

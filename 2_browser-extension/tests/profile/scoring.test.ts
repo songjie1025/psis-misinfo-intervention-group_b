@@ -28,13 +28,8 @@ describe("scoreAnswers", () => {
     expect(scoreAnswers(answers).openness).toBe(5);
   });
 
-  it("omits nfcc when the optional items are unanswered", () => {
-    const answers: QuestionnaireAnswers = { bfi_o2: 3 };
-    expect(scoreAnswers(answers).nfcc).toBeUndefined();
-  });
-
-  it("includes nfcc when answered", () => {
+  it("leaves nfcc undefined — NFCC is not part of the current questionnaire", () => {
     const answers: QuestionnaireAnswers = { nfcc_1: 5, nfcc_2: 5 };
-    expect(scoreAnswers(answers).nfcc).toBe(5);
+    expect(scoreAnswers(answers).nfcc).toBeUndefined();
   });
 });

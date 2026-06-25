@@ -1,20 +1,10 @@
-// LLM prompt builders for personality-adapted intervention wording (FR6).
+// LLM prompt builder for personality-adapted intervention wording (FR6).
+// Assembles a compact prompt from modular fragments — see personalityFragments.ts for the
+// per-dimension roles and assembly logic.
 import { Verdict } from "../pipeline/types";
-import { PersonalityProfile } from "../profile/types";
+import { PersonalityProfile, PoliticalOrientation } from "../profile/types";
+import { personalityFragments, politicalFragment } from "./personalityFragments";
 import { Tier } from "./types";
-
-/** Only abstract, anonymized labels — never raw answers, identity, or political values (§6). */
-function personalityHint(profile: PersonalityProfile): string {
-  const parts = [
-    `openness=${profile.openness}`,
-    `conscientiousness=${profile.conscientiousness}`,
-    `extraversion=${profile.extraversion}`,
-    `agreeableness=${profile.agreeableness}`,
-    `neuroticism=${profile.neuroticism}`,
-  ];
-  if (profile.nfcc) parts.push(`need-for-closure=${profile.nfcc}`);
-  return parts.join(", ");
-}
 
 const TIER_INSTRUCTION: Record<Tier, string> = {
   T1: "Write a SINGLE short warning label (max 12 words). Set body to an empty string.",
@@ -26,21 +16,35 @@ export function createInterventionPrompt(
   tier: Tier,
   verdict: Verdict,
   profile: PersonalityProfile,
+  political: PoliticalOrientation | null = null,
 ): string {
   const sources =
     verdict.sources
       .map((s) => `- ${s.publisherName}: ${s.articleTitle} (${s.url})`)
       .join("\n") || "(none)";
 
+  // Strip newlines and quotes from scraped text to prevent prompt injection attacks.
+  const safeClaim = verdict.claim.content.replace(/[\r\n]+/g, " ").replace(/"/g, "'").slice(0, 200);
+
+  // One tone line per dimension (O, A, C) + an optional political line.
+  const guidance = [
+    ...personalityFragments(profile),
+    ...politicalFragment(political),
+  ]
+    .map((line) => `- ${line}`)
+    .join("\n");
+
   return `You are X-Check, a misinformation-intervention assistant.
 A social-media claim has been fact-checked.
 
-Claim: "${verdict.claim.content}"
+Claim: "${safeClaim}"
 Verdict: ${verdict.label}
 Sources:
 ${sources}
 
-Adapt the TONE and WORDING to this user's personality profile: ${personalityHint(profile)}.
+Tailor the tone and wording to this user (combine all of the following):
+${guidance}
+
 ${TIER_INSTRUCTION[tier]}
 
 Return ONLY a JSON object: {"headline": "...", "body": "..."} and nothing else.`;

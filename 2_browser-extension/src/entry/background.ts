@@ -29,11 +29,11 @@ const DEFAULT_BASELINE = 50;
 // Used for wording before the user has completed the questionnaire, so the personalization
 // path still runs (neutral tone) instead of silently doing nothing.
 const NEUTRAL_PROFILE: PersonalityProfile = {
-  openness: "medium",
-  conscientiousness: "medium",
-  extraversion: "medium",
-  agreeableness: "medium",
-  neuroticism: "medium",
+  openness: "neutral",
+  conscientiousness: "neutral",
+  extraversion: "neutral",
+  agreeableness: "neutral",
+  neuroticism: "neutral",
 };
 
 console.info("[X-Check] service worker loaded");
@@ -60,6 +60,7 @@ async function handleCheckPost(req: CheckPostRequest): Promise<WorkerResponse> {
 
   const storedProfile = await store.getProfile();
   const profile = storedProfile ?? NEUTRAL_PROFILE;
+  const political = await store.getPolitical(); // optional; null = not answered
   const riskState = await getOrInitRiskState(storedProfile);
   const band = bandFor(riskState.score);
   const tier = selectTier(band); // FR5: tier from Risk Score band alone
@@ -76,10 +77,17 @@ async function handleCheckPost(req: CheckPostRequest): Promise<WorkerResponse> {
   let headline = "";
   let body = "";
   if (verdict && isActionable(verdict.label)) {
-    const text = await generateWording(gemini, tier, verdict, profile); // FR6
+    // FR6: personality (+ optional political) adapt the wording.
+    const text = await generateWording(gemini, tier, verdict, profile, political);
     headline = text.headline;
     body = text.body;
   }
+
+  // Flat debug log: which post mapped to which tier at the current Risk Score.
+  console.info(
+    `[X-Check][risk] check post ${req.postId}: score ${riskState.score} ` +
+      `band ${band} -> ${tier} (verdict ${verdict ? verdict.label : "none"})`,
+  );
 
   return {
     type: "DECISION",
@@ -94,7 +102,15 @@ async function handleRequest(req: WorkerRequest): Promise<WorkerResponse> {
     case "BEHAVIOUR_EVENT": {
       const profile = await store.getProfile();
       const state = await getOrInitRiskState(profile);
-      await store.setRiskState(applyEvent(state, req.event));
+      const updated = applyEvent(state, req.event);
+      const delta = updated.score - state.score;
+      const sign = delta >= 0 ? `+${delta}` : `${delta}`;
+      // Flat debug log: which event moved the Risk Score and where it landed.
+      console.info(
+        `[X-Check][risk] ${req.event.type} ${sign} -> ${updated.score} ` +
+          `(band: ${bandFor(updated.score)})`,
+      );
+      await store.setRiskState(updated);
       return { type: "ACK" };
     }
   }

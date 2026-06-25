@@ -2,9 +2,9 @@ import { buildProfile, toLevel } from "../../src/profile/profile";
 import { TraitScores } from "../../src/profile/types";
 
 describe("toLevel", () => {
-  it("maps scores to low / medium / high", () => {
+  it("maps scores to low / neutral / high (midpoint 3)", () => {
     expect(toLevel(2)).toBe("low");
-    expect(toLevel(3)).toBe("medium");
+    expect(toLevel(3)).toBe("neutral");
     expect(toLevel(4.5)).toBe("high");
   });
 });
@@ -18,11 +18,11 @@ describe("buildProfile", () => {
     neuroticism: 4,
   };
 
-  it("omits nfcc when absent", () => {
-    expect(buildProfile(base).nfcc).toBeUndefined();
+  it("maps Big Five scores to levels", () => {
+    expect(buildProfile(base).openness).toBe("high");
   });
 
-  it("includes nfcc when present", () => {
-    expect(buildProfile({ ...base, nfcc: 5 }).nfcc).toBe("high");
+  it("omits nfcc (not collected in the current version)", () => {
+    expect(buildProfile(base).nfcc).toBeUndefined();
   });
 });

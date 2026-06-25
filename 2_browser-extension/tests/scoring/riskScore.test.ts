@@ -6,11 +6,11 @@ import {
 import { PersonalityProfile } from "../../src/profile/types";
 
 const profile = (over: Partial<PersonalityProfile> = {}): PersonalityProfile => ({
-  openness: "medium",
-  conscientiousness: "medium",
-  extraversion: "medium",
-  agreeableness: "medium",
-  neuroticism: "medium",
+  openness: "neutral",
+  conscientiousness: "neutral",
+  extraversion: "neutral",
+  agreeableness: "neutral",
+  neuroticism: "neutral",
   ...over,
 });
 
@@ -37,21 +37,27 @@ describe("bandFor", () => {
   });
 });
 
-describe("baselineFromProfile", () => {
+describe("baselineFromProfile (Openness + Conscientiousness)", () => {
   it("keeps a neutral profile at the baseline", () => {
     expect(baselineFromProfile(profile())).toBe(50);
   });
 
-  it("raises the baseline for high need-for-closure", () => {
-    expect(baselineFromProfile(profile({ nfcc: "high" }))).toBe(65);
+  it("raises the baseline for low conscientiousness", () => {
+    expect(baselineFromProfile(profile({ conscientiousness: "low" }))).toBe(60);
   });
 
-  it("applies the protective modifier for high openness", () => {
+  it("lowers the baseline for high conscientiousness", () => {
+    expect(baselineFromProfile(profile({ conscientiousness: "high" }))).toBe(40);
+  });
+
+  it("applies the openness modifiers (low +5, high -5)", () => {
+    expect(baselineFromProfile(profile({ openness: "low" }))).toBe(55);
     expect(baselineFromProfile(profile({ openness: "high" }))).toBe(45);
   });
 
-  it("combines susceptibility and protective modifiers", () => {
-    // nfcc high (+15) and openness high (-5) → 60
-    expect(baselineFromProfile(profile({ nfcc: "high", openness: "high" }))).toBe(60);
+  it("combines low openness + low conscientiousness", () => {
+    expect(
+      baselineFromProfile(profile({ openness: "low", conscientiousness: "low" })),
+    ).toBe(65);
   });
 });

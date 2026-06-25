@@ -22,13 +22,21 @@ export function bandFor(score: number): RiskBand {
 
 /**
  * Starting Risk Score derived from the personality profile, before any behaviour.
- * Traits associated with susceptibility to misinformation raise the baseline. Tunable (§9).
+ * Based on Openness + Conscientiousness (team decision, 2026-06-25). Lower openness /
+ * conscientiousness → higher starting susceptibility.
+ *
+ * Weights: C uses ±10 (stronger research signal); O uses a smaller ±5 (weaker research signal).
+ *
+ * NOTE: Tolga's "Personality and Misinformation" review actually found Openness has no
+ * effect on sharing, while Conscientiousness & Agreeableness (↓) and Extraversion (↑) do.
+ * If we want to align baseline with that data, switch the factors to C/A/E. All weights
+ * are tunable — see REQUIREMENTS §9.
  */
 export function baselineFromProfile(profile: PersonalityProfile): number {
   let score = NEUTRAL_BASELINE;
-  if (profile.nfcc === "high") score += 15;
-  if (profile.openness === "low") score += 10;
   if (profile.conscientiousness === "low") score += 10;
+  if (profile.openness === "low") score += 5;
+  if (profile.conscientiousness === "high") score -= 10;
   if (profile.openness === "high") score -= 5;
   return clampScore(score);
 }

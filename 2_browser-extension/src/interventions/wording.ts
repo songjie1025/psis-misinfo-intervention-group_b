@@ -1,7 +1,7 @@
 // Generate tier-appropriate, personality-adapted wording via the LLM (FR6).
 import { GeminiClient } from "../pipeline/geminiClient";
 import { Verdict } from "../pipeline/types";
-import { PersonalityProfile } from "../profile/types";
+import { PersonalityProfile, PoliticalOrientation } from "../profile/types";
 import { createInterventionPrompt } from "./prompts";
 import { Tier } from "./types";
 
@@ -31,8 +31,9 @@ export async function generateWording(
   tier: Tier,
   verdict: Verdict,
   profile: PersonalityProfile,
+  political: PoliticalOrientation | null = null,
 ): Promise<InterventionText> {
-  const prompt = createInterventionPrompt(tier, verdict, profile);
+  const prompt = createInterventionPrompt(tier, verdict, profile, political);
   const raw = await client.ask(prompt);
   return parseWording(raw);
 }
