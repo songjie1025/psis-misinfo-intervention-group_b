@@ -112,58 +112,23 @@ export async function generateLlmExplanation(
   return client.ask(prompt);
 }
 
-export function factCheck(post: Post): UserResponse {
-  // const claims = await extractClaimsFromPost(geminiClient, post);
-  // const postVerdict = await generatePostVerdict(
-  //   geminiClient,
-  //   factCheckClient,
-  //   post,
-  //   claims,
-  // );
-  // const llmExplanation = generateLlmExplanation(geminiClient, postVerdict);
-
-  return {
-    factCheckText: "This post was flagged as misinformation",
-    verdicts: [
-      {
-        post: { content: "5G causes cancer. Vaccines contain microchips." },
-        verdicts: [
-          {
-            claim: { content: "5G causes cancer" },
-            label: VerdictLabel.FALSE,
-            sources: [
-              {
-                publisherName: "Reuters",
-                publisherSite: "reuters.com",
-                url: "https://reuters.com/1",
-                articleTitle: "Fact check: 5G does not cause cancer",
-                rating: "False",
-              },
-            ],
-          },
-          {
-            claim: { content: "Vaccines contain microchips" },
-            label: VerdictLabel.DISPUTED,
-            sources: [
-              {
-                publisherName: "BBC",
-                publisherSite: "bbc.com",
-                url: "https://bbc.com/1",
-                articleTitle: "No, vaccines do not contain microchips",
-                rating: "False",
-              },
-              {
-                publisherName: "AP News",
-                publisherSite: "apnews.com",
-                url: "https://apnews.com/1",
-                articleTitle:
-                  "Fact check: Vaccine microchip claim is misleading",
-                rating: "Misleading",
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  };
+/**
+ * Full fact-check entry point: extract claims → verify against fact databases → derive verdicts.
+ * Callers inject the two API clients (BYOK keys, §6). A plain-language explanation is available
+ * separately via generateLlmExplanation; it is intentionally NOT produced here, to avoid one extra
+ * Gemini call per post (the intervention wording is generated downstream instead).
+ */
+export async function factCheck(
+  geminiClient: GeminiClient,
+  factCheckClient: FactCheckDbClient,
+  post: Post,
+): Promise<UserResponse> {
+  const claims = await extractClaimsFromPost(geminiClient, post);
+  const postVerdict = await generatePostVerdict(
+    geminiClient,
+    factCheckClient,
+    post,
+    claims,
+  );
+  return { verdicts: [postVerdict] };
 }

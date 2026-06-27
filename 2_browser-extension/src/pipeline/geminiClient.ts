@@ -1,5 +1,5 @@
 export class GeminiClient {
-  private static readonly DEFAULT_MODEL = "gemini-2.5-flash";
+  private static readonly DEFAULT_MODEL = "gemini-3.1-flash-lite";
   private static readonly API_URL =
     "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -13,21 +13,28 @@ export class GeminiClient {
 
   async ask(prompt: string): Promise<string> {
     const url = `${GeminiClient.API_URL}/${this.model}:generateContent`;
-
-    const response = await fetch(`${url}?key=${this.apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 1024,
-        },
-      }),
+    const body = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 1024,
+      },
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+    // Retry on transient rate-limit / overload (429/503) with exponential backoff.
+    let response: Response | undefined;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      response = await fetch(`${url}?key=${this.apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      if (response.status !== 429 && response.status !== 503) break;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(`HTTP error: ${response?.status} ${response?.statusText}`);
     }
 
     const data = await response.json();

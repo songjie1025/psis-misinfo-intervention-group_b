@@ -221,3 +221,7 @@ __marimo__/
 2_backend/app.db
 
 node_modules/
+
+# macOS
+.DS_Store
+**/.DS_Store
