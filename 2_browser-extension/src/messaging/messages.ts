@@ -2,7 +2,7 @@
 import { BehaviourEvent } from "../scoring/types";
 import { InterventionDecision } from "../interventions/types";
 
-// ---- content-script → service worker ----
+// ---- content-script -> service worker ----
 
 export interface CheckPostRequest {
   type: "CHECK_POST";
@@ -17,7 +17,7 @@ export interface BehaviourEventMessage {
 
 export type WorkerRequest = CheckPostRequest | BehaviourEventMessage;
 
-// ---- service worker → content-script ----
+// ---- service worker -> content-script ----
 
 export interface DecisionResponse {
   type: "DECISION";
@@ -26,6 +26,9 @@ export interface DecisionResponse {
 
 export interface AckResponse {
   type: "ACK";
+  // Current tier zone after the event ("none" | "T1" | "T2" | "T3"). When this changes, the
+  // content-script re-evaluates visible posts so interventions follow the live Risk Score.
+  tierZone?: string;
 }
 
 export interface ErrorResponse {

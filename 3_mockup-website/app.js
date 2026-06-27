@@ -55,6 +55,14 @@ const Controller = {
     const [comments, setComments] = React.useState([]);
     const [selectedPostId, setSelectedPostId] = React.useState(null);
     const [draftText, setDraftText] = React.useState("");
+    // Remember the feed's scroll position so returning from a post detail restores it
+    // instead of jumping to the top (the feed is unmounted while viewing a detail).
+    const scrollPositionRef = React.useRef(0);
+
+    React.useLayoutEffect(() => {
+      // Opening a post -> start the detail at the top; returning -> restore the feed.
+      window.scrollTo(0, selectedPostId === null ? scrollPositionRef.current : 0);
+    }, [selectedPostId]);
 
     React.useEffect(() => {
       setSessionId(Model.getSessionId());
@@ -121,6 +129,7 @@ const Controller = {
     };
 
     const handlePostClick = (postId) => {
+      scrollPositionRef.current = window.scrollY;
       setSelectedPostId(postId);
     };
 
@@ -248,7 +257,13 @@ function PostCard({
   const avatarClass = compact ? "w-9 h-9" : "w-11 h-11";
 
   return (
-    <article onClick={onCardClick} className={containerClass}>
+    <article
+      {...(!compact
+        ? { "data-xcheck-post": "", "data-xcheck-post-id": post.id }
+        : {})}
+      onClick={onCardClick}
+      className={containerClass}
+    >
       <div className="flex items-start gap-3 mb-3">
         <div
           className={`${avatarClass} rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold`}
@@ -284,6 +299,7 @@ function PostCard({
             </button>
 
             <button
+              data-xcheck-share="true"
               onClick={(e) => {
                 e.stopPropagation();
                 if (onShare) onShare(post.id);
@@ -294,6 +310,7 @@ function PostCard({
             </button>
 
             <button
+              data-xcheck-like="true"
               onClick={(e) => {
                 e.stopPropagation();
                 if (onLike) onLike(post.id);

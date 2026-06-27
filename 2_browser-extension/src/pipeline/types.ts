@@ -42,7 +42,6 @@ export type PostVerdict = {
 };
 
 export type UserResponse = {
-  factCheckText: string;
   verdicts: PostVerdict[];
 };
 

@@ -1,7 +1,6 @@
 // X-Check service worker — the orchestrator.
-// Receives a post from the content-script, runs the full pipeline + scoring + intervention
-// decision, and returns ONE InterventionDecision. Also folds behaviour events into the
-// Risk Score (learning loop, FR4).
+// Caches the (expensive) fact-check VERDICT per post, but derives the intervention tier and
+// wording from the LIVE Risk Score on every check, so interventions follow the score (FR4/FR5).
 import { onWorkerRequest } from "../messaging/bridge";
 import {
   CheckPostRequest,
@@ -11,23 +10,22 @@ import {
 import { factCheck } from "../pipeline/pipeline";
 import { GeminiClient } from "../pipeline/geminiClient";
 import { FactCheckDbClient } from "../pipeline/googleClient";
+import { Verdict } from "../pipeline/types";
 import { store } from "../storage/store";
 import { bandFor, baselineFromProfile } from "../scoring/riskScore";
 import { applyEvent, initialState } from "../scoring/learning";
 import { RiskState } from "../scoring/types";
 import { PersonalityProfile } from "../profile/types";
-import { selectTier } from "../interventions/selector";
+import { tierForScore } from "../interventions/selector";
 import {
   buildDecision,
   isActionable,
   pickPrimaryVerdict,
 } from "../interventions/decision";
-import { generateWording } from "../interventions/wording";
+import { generateWording, InterventionText } from "../interventions/wording";
 
 const DEFAULT_BASELINE = 50;
 
-// Used for wording before the user has completed the questionnaire, so the personalization
-// path still runs (neutral tone) instead of silently doing nothing.
 const NEUTRAL_PROFILE: PersonalityProfile = {
   openness: "neutral",
   conscientiousness: "neutral",
@@ -35,6 +33,12 @@ const NEUTRAL_PROFILE: PersonalityProfile = {
   agreeableness: "neutral",
   neuroticism: "neutral",
 };
+
+// Cache the VERDICT per post text (null = checked, no actionable verdict). This is the
+// expensive part (Gemini extract/align + Google Fact Check) and never changes for a post.
+const verdictCache = new Map<string, Verdict | null>();
+// Cache wording per `${content}|${tier}` so Gemini is only called when the tier actually changes.
+const wordingCache = new Map<string, InterventionText>();
 
 console.info("[X-Check] service worker loaded");
 
@@ -57,41 +61,67 @@ async function handleCheckPost(req: CheckPostRequest): Promise<WorkerResponse> {
       message: "No API keys set — open the X-Check popup and add your keys.",
     };
   }
-
-  const storedProfile = await store.getProfile();
-  const profile = storedProfile ?? NEUTRAL_PROFILE;
-  const political = await store.getPolitical(); // optional; null = not answered
-  const riskState = await getOrInitRiskState(storedProfile);
-  const band = bandFor(riskState.score);
-  const tier = selectTier(band); // FR5: tier from Risk Score band alone
-
   const gemini = new GeminiClient(keys.gemini);
-  const factCheckClient = new FactCheckDbClient(keys.factCheck);
 
-  const result = await factCheck(gemini, factCheckClient, {
-    content: req.content,
-  });
-  const postVerdict = result.verdicts[0] ?? null;
-  const verdict = postVerdict ? pickPrimaryVerdict(postVerdict) : null;
-
-  let headline = "";
-  let body = "";
-  if (verdict && isActionable(verdict.label)) {
-    // FR6: personality (+ optional political) adapt the wording.
-    const text = await generateWording(gemini, tier, verdict, profile, political);
-    headline = text.headline;
-    body = text.body;
+  // 1) Verdict — cached per post text; computed once via the pipeline.
+  let verdict = verdictCache.get(req.content);
+  if (verdict === undefined) {
+    const factCheckClient = new FactCheckDbClient(keys.factCheck);
+    const result = await factCheck(gemini, factCheckClient, { content: req.content });
+    const postVerdict = result.verdicts[0] ?? null;
+    const primary = postVerdict ? pickPrimaryVerdict(postVerdict) : null;
+    verdict = primary && isActionable(primary.label) ? primary : null;
+    verdictCache.set(req.content, verdict);
   }
 
-  // Flat debug log: which post mapped to which tier at the current Risk Score.
-  console.info(
-    `[X-Check][risk] check post ${req.postId}: score ${riskState.score} ` +
-      `band ${band} -> ${tier} (verdict ${verdict ? verdict.label : "none"})`,
-  );
+  // 2) Tier — DERIVED FROM THE LIVE RISK SCORE on every check.
+  const storedProfile = await store.getProfile();
+  const riskState = await getOrInitRiskState(storedProfile);
+  const score = riskState.score;
+  const band = bandFor(score);
+  const tier = verdict ? tierForScore(score) : null;
 
+  if (!verdict || tier === null) {
+    console.info(
+      `[X-Check][risk] post ${req.postId}: score ${score} -> ` +
+        (verdict ? "below floor, no intervention" : "verdict none"),
+    );
+    return {
+      type: "DECISION",
+      decision: buildDecision({
+        postId: req.postId,
+        verdict: null,
+        tier: "T1",
+        band,
+        headline: "",
+        body: "",
+      }),
+    };
+  }
+
+  // 3) Wording — cached per (post, tier); Gemini only when the tier actually changes.
+  const profile = storedProfile ?? NEUTRAL_PROFILE;
+  const political = await store.getPolitical();
+  const wkey = `${req.content}|${tier}`;
+  let text = wordingCache.get(wkey);
+  if (!text) {
+    text = await generateWording(gemini, tier, verdict, profile, political); // FR6
+    wordingCache.set(wkey, text);
+  }
+
+  console.info(
+    `[X-Check][risk] post ${req.postId}: score ${score} band ${band} -> ${tier} (${verdict.label})`,
+  );
   return {
     type: "DECISION",
-    decision: buildDecision({ postId: req.postId, verdict, tier, band, headline, body }),
+    decision: buildDecision({
+      postId: req.postId,
+      verdict,
+      tier,
+      band,
+      headline: text.headline,
+      body: text.body,
+    }),
   };
 }
 
@@ -105,13 +135,12 @@ async function handleRequest(req: WorkerRequest): Promise<WorkerResponse> {
       const updated = applyEvent(state, req.event);
       const delta = updated.score - state.score;
       const sign = delta >= 0 ? `+${delta}` : `${delta}`;
-      // Flat debug log: which event moved the Risk Score and where it landed.
       console.info(
         `[X-Check][risk] ${req.event.type} ${sign} -> ${updated.score} ` +
           `(band: ${bandFor(updated.score)})`,
       );
       await store.setRiskState(updated);
-      return { type: "ACK" };
+      return { type: "ACK", tierZone: tierForScore(updated.score) ?? "none" };
     }
   }
 }

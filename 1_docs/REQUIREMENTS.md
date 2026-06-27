@@ -3,7 +3,7 @@
 **Project:** X-Check (also read as "Cross-Check") — a personalized misinformation-intervention prototype
 **Team:** PSIS SS2026, Group B (Amin, Jie, Tolga, Sarah)
 **Status:** Draft · Living document — updated as decisions are made at the weekly team meeting
-**Last updated:** 2026-06-25
+**Last updated:** 2026-06-28
 
 ---
 
@@ -49,7 +49,7 @@ why*, this document is the source of truth.
 ### In scope (MVP)
 
 1. Onboarding questionnaire and local personality profiling.
-2. Live misinformation-detection pipeline connected to real Gemini 2.5 Flash and Google
+2. Live misinformation-detection pipeline connected to real Gemini 3.1 Flash-lite and Google
    Fact Check Tools API calls. *(Now live on `feat/extension-scaffold`; see §8.)*
 3. Risk Score computed from real-time **and** historical behaviour, including a learning loop.
 4. Three escalating intervention types (T1/T2/T3), selected by Risk Score.
@@ -83,10 +83,17 @@ User data (questionnaire answers, personality profile, Risk Score history) is st
 
 ```
 1_docs/                 Documentation (this file, etc.)
-2_browser-extension/    Chrome extension (Manifest V3) — detection, scoring, interventions
-  ├─ src/pipeline/      Fact-check pipeline (TypeScript): pipeline, geminiClient,
-  │                     googleClient, prompts, parser, types
-  └─ tests/pipeline/    Jest tests
+2_browser-extension/    Chrome extension (Manifest V3, TypeScript → esbuild → dist/)
+  ├─ src/entry/         Entry points: background (service worker), content-script, popup
+  │   └─ components/    Content-script parts: scanner, renderer, behaviour-tracker, …
+  ├─ src/profile/       Questionnaire → personality profile (BFI-10)
+  ├─ src/scoring/       Risk Score from behaviour (baseline, weights, decay)
+  ├─ src/interventions/ Tier selection + personality-adapted wording
+  ├─ src/pipeline/      Fact-check pipeline: geminiClient, googleClient, parser, …
+  ├─ src/messaging/     Typed content-script ↔ worker contract
+  ├─ src/storage/       chrome.storage.local wrapper
+  ├─ src/ui/            In-page floating panel (questionnaire modal)
+  └─ tests/             Jest unit tests
 3_mockup-website/       X-style mockup (React/JSX → Babel-compiled), served as static files
                         by Python on http://localhost:8000
 ```
@@ -96,8 +103,8 @@ User data (questionnaire answers, personality profile, Risk Score history) is st
 | Layer | Technology |
 |---|---|
 | Extension | Chrome Extension, Manifest V3, TypeScript |
-| Detection pipeline | TypeScript (`extract → search → align → verdict → explain`) |
-| LLM | Google Gemini 2.5 Flash (REST API) |
+| Detection pipeline | TypeScript (`extract → search → align → verdict`) |
+| LLM | Google Gemini 3.1 Flash-lite (REST API) |
 | Fact databases | Google Fact Check Tools API |
 | Mockup website | React/JSX compiled with Babel, served via Python static server |
 | Tests | Jest + ts-jest |
@@ -117,9 +124,9 @@ personality-adapted wording → intervention injected into the page.
 |---|---|
 | **FR1 — Onboarding questionnaire** | On first use, the user completes a **mandatory** BFI-10 test (10 items, Big Five). **Optional**: one political-orientation question with answer options `left` / `right` / no-answer (skip). NFCC has been removed from the questionnaire (decision: 2026-06-25 team meeting). A finer-grained political scale (strong vs. slight lean) is a planned future enhancement; see §9. |
 | **FR2 — Personality profiling** | Questionnaire answers are converted **locally** into a small set of abstract personality labels (e.g. `openness: high`, `conscientiousness: low`). Raw answers stay on device. |
-| **FR3 — Misinformation detection** | For each browsed post, the pipeline extracts claims, searches fact databases, aligns them with the claim, produces a verdict, and prepares an explanation. |
-| **FR4 — Risk Score & behaviour tracking** | A per-user Risk Score is computed from **real-time behaviour** (scroll speed, dwell time, interactions) and **historical behaviour** (past responses to interventions). The score rises when the user ignores/dismisses interventions, dwells briefly on warnings, or shares flagged content; it falls when the user reads expanded warnings, clicks through to trusted sources, or spends time on the intervention. Responses continuously update the score (learning loop). *Conceptual framework only; exact weights are an implementation detail.* **Planned:** the mockup website now supports un-liking posts; the logic side must later lower the Risk Score when a like is undone (e.g., an `UNLIKE_FLAGGED` event with negative weight). |
-| **FR5 — Intervention selection** | **The Risk Score alone determines the intervention level**: low → **T1 Label**, medium → **T2 Justification (with sources)**, high → **T3 Interruption (full-screen)**. Personality does **not** change the level — only the content (FR6). *(Only Openness, Agreeableness, and Conscientiousness affect wording; Extraversion and Neuroticism have no documented effect on misinformation-label attitudes per research.)* |
+| **FR3 — Misinformation detection** | For each browsed post, the pipeline extracts claims, searches fact databases, aligns them with the claim, and produces a verdict with supporting sources. |
+| **FR4 — Risk Score & behaviour tracking** | A per-user Risk Score is computed from **real-time behaviour** (scroll speed, dwell time, interactions) and **historical behaviour** (past responses to interventions). The score rises when the user ignores/dismisses interventions, dwells briefly on warnings, or shares flagged content; it falls when the user reads expanded warnings, clicks through to trusted sources, or spends time on the intervention. Responses continuously update the score (learning loop). *An initial framework is implemented (baseline from personality, weighted behaviour events, time-decay back toward neutral, and a per-minute cap on passive signals). The concrete weights are a **first version** and will be continuously adapted as we observe real user behaviour — they are intentionally not fixed.* **Planned:** the mockup website now supports un-liking posts; the logic side must later lower the Risk Score when a like is undone (e.g., an `UNLIKE_FLAGGED` event with negative weight). |
+| **FR5 — Intervention selection** | **The Risk Score alone determines the intervention level.** Below an initial no-intervention floor the user is considered reflective enough that no warning is shown; above it the score maps to **T1 Label → T2 Justification (with sources) → T3 Interruption (full-screen)**. These thresholds are a **first version** and will be tuned based on observed behaviour. Personality does **not** change the level — only the content (FR6). *(Only Openness, Agreeableness, and Conscientiousness affect wording; Extraversion and Neuroticism have no documented effect on misinformation-label attitudes per research.)* |
 | **FR6 — LLM content adaptation** | For the selected intervention type, the LLM generates wording adapted to the user's personality (Openness, Agreeableness, Conscientiousness) and optional political orientation. User requests are **ID-anonymised**, so personal identity is not exposed even though political-derived tone guidance is included. Only **abstract personality labels**, optional political tone guidance, and the misinformation text are sent to the LLM — never raw answers or identifying information. |
 
 ---
@@ -145,7 +152,7 @@ personality-adapted wording → intervention injected into the page.
 
 ### Performance & cost
 
-- Gemini 2.5 Flash (free tier) shows ~5–15 s latency per call (typical ~6.6 s) and is rate- and
+- Gemini 3.1 Flash-lite (free tier) shows ~5–15 s latency per call (typical ~6.6 s) and is rate- and
   reliability-limited (≈1,500 requests/day, occasional 503s, no retry logic). These constrain
   real-time use; a paid model or caching may be needed before final delivery (see §9).
 
@@ -156,7 +163,7 @@ personality-adapted wording → intervention injected into the page.
 | Area | Owner(s) |
 |---|---|
 | Extension core logic — fact-check pipeline + LLM integration | **Amin** (lead), Jie |
-| Risk Score & behaviour tracking | Jie / Amin *(to be split; not yet started)* |
+| Risk Score & behaviour tracking | Jie / Amin *(initial framework implemented; ongoing tuning)* |
 | Mockup website frontend | **Sarah** |
 | Extension framework, frontend ↔ extension integration, onboarding questionnaire (item bank & literature) | **Tolga** |
 | Intervention UI & LLM content adaptation (T1/T2/T3) | **All members** |
@@ -172,11 +179,13 @@ happens on **Discord**.
 
 ### Current status
 
-- Fact-check pipeline: now connected to real **Gemini 2.5 Flash** and **Google Fact Check Tools**
+- Fact-check pipeline: now connected to real **Gemini 3.1 Flash-lite** and **Google Fact Check Tools**
   API calls on `feat/extension-scaffold`.
 - Mockup website scaffolded; extension skeleton in place.
 - Questionnaire, personality profiling, Risk Score, behaviour tracking, and interventions:
-  **framework implemented on `feat/extension-scaffold`; to be refined after detailed discussion**.
+  **an initial framework is implemented on `feat/extension-scaffold`; it will be continuously
+  refined and tuned based on observed user behaviour** (the in-page questionnaire panel, the
+  scoring loop and the T1/T2/T3 selection are wired end-to-end, but the values are a first pass).
 
 ### Roadmap (after MVP, time permitting)
 
@@ -204,8 +213,11 @@ happens on **Discord**.
   passed as a URL query parameter (`?key=...`), so they can surface in browser history, devtools,
   and proxy logs. Both must be addressed (backend proxy + header-based auth) before any real
   deployment. *(Security topics above are parked for a later discussion.)*
-- **Risk Score tuning:** the scoring framework is agreed, but concrete weights and thresholds
-  still need to be set and tuned during implementation.
+- **Risk Score tuning:** an initial scoring framework is implemented (personality baseline,
+  weighted behaviour events, time-decay, a per-minute cap on passive signals, and a
+  no-intervention floor at the low end). These values are a **first version**; the weights and
+  thresholds are intentionally left open and will be continuously adapted as we observe how
+  real users behave.
 - **UNLIKE_FLAGGED event (planned):** the mockup website now supports un-liking posts; the Risk
   Score logic must later lower the score when a like is undone (e.g., an `UNLIKE_FLAGGED` event
   with negative weight).

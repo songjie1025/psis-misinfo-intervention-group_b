@@ -11,6 +11,7 @@ export type BehaviourEventType =
   | "FAST_SCROLL"
   | "SHORT_DWELL_POST"
   // Score-lowering signals (more reflective):
+  | "LONG_DWELL_POST"
   | "READ_EXPANDED_WARNING"
   | "CLICK_TRUSTED_SOURCE"
   | "TIME_ON_INTERVENTION";
@@ -28,4 +29,7 @@ export interface RiskState {
   score: number; // 0–100
   updatedAt: number;
   eventCount: number;
+  /** Rolling-window accounting for the passive-signal rate cap (see learning.ts). */
+  passiveWindowStart?: number;
+  passivePoints?: number;
 }

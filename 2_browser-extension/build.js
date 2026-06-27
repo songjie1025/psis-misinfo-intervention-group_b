@@ -1,17 +1,13 @@
 // esbuild build script for the X-Check MV3 extension.
-//
-// Why this file exists: Chrome can only load .js. Our logic is written in .ts under src/.
-// esbuild takes each entry point in src/entry/, follows every `import` (including the whole
-// pipeline + scoring + profile + intervention modules), and bundles each into ONE plain .js
-// file under dist/ that manifest.json / the HTML pages point at. `format: "iife"` is required
-// because Chrome content scripts cannot be ES modules.
+// Chrome can only load .js; our logic is .ts under src/. esbuild bundles each entry point in
+// src/entry/ (following every import) into one plain .js under dist/ that manifest.json /
+// popup.html point at. format "iife" is required because content scripts cannot be ES modules.
 const esbuild = require("esbuild");
 
 const ENTRIES = [
   { in: "src/entry/background.ts", out: "dist/background.js" },
   { in: "src/entry/content-script.ts", out: "dist/content-script.js" },
   { in: "src/entry/popup.ts", out: "dist/popup.js" },
-  { in: "src/entry/onboarding.ts", out: "dist/onboarding.js" },
 ];
 
 const SHARED = {

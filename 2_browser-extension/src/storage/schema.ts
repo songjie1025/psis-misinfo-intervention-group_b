@@ -11,7 +11,7 @@ export interface ApiKeys {
 export interface StoredData {
   onboardingComplete: boolean;
   profile: PersonalityProfile | null;
-  political: PoliticalOrientation | null; // local only — never sent to the LLM
+  political: PoliticalOrientation | null; // raw value stays local; only a derived, ID-anonymised tone line reaches the LLM (FR6)
   riskState: RiskState | null;
   apiKeys: ApiKeys | null;
 }

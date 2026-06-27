@@ -7,14 +7,15 @@ import { BehaviourEvent, BehaviourEventType } from "./types";
  */
 export const EVENT_WEIGHTS: Record<BehaviourEventType, number> = {
   SHARE_FLAGGED: 20,
-  LIKE_FLAGGED: 12,
+  LIKE_FLAGGED: 10,
   DISMISS_INTERVENTION: 10,
-  SHORT_DWELL_POST: 8,
+  SHORT_DWELL_POST: 1,
   SHORT_DWELL_WARNING: 5,
-  FAST_SCROLL: 5,
-  READ_EXPANDED_WARNING: -10,
+  FAST_SCROLL: 1,
+  LONG_DWELL_POST: -3,
+  READ_EXPANDED_WARNING: -8,
   CLICK_TRUSTED_SOURCE: -12,
-  TIME_ON_INTERVENTION: -8,
+  TIME_ON_INTERVENTION: -5,
 };
 
 export function makeEvent(

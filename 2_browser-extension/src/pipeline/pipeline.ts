@@ -113,9 +113,10 @@ export async function generateLlmExplanation(
 }
 
 /**
- * Full fact-check entry point: extract claims → verify against fact databases →
- * derive verdicts → generate a plain-language explanation.
- * Replaces the former mock. Callers inject the two API clients (BYOK keys, §6).
+ * Full fact-check entry point: extract claims → verify against fact databases → derive verdicts.
+ * Callers inject the two API clients (BYOK keys, §6). A plain-language explanation is available
+ * separately via generateLlmExplanation; it is intentionally NOT produced here, to avoid one extra
+ * Gemini call per post (the intervention wording is generated downstream instead).
  */
 export async function factCheck(
   geminiClient: GeminiClient,
@@ -129,7 +130,5 @@ export async function factCheck(
     post,
     claims,
   );
-  const factCheckText = await generateLlmExplanation(geminiClient, postVerdict);
-
-  return { factCheckText, verdicts: [postVerdict] };
+  return { verdicts: [postVerdict] };
 }
