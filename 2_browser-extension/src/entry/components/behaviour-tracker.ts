@@ -100,6 +100,11 @@ export function createBehaviourTracker({
 
   // Like / share of a FLAGGED post raises the Risk Score (FR4). One delegated capture-phase
   // listener so it fires even though the page calls stopPropagation on the button.
+  //
+  // Like/share are TOGGLES: a second click un-likes / un-shares. We run in the capture phase,
+  // BEFORE React flips the button's state, so the button's current colour class tells us the
+  // pre-click state — liking emits the raise, un-liking emits the exact inverse so repeated
+  // toggling nets to zero (the score only stays raised while the post is actually liked/shared).
   function trackLikesAndShares(): void {
     document.addEventListener(
       "click",
@@ -110,7 +115,14 @@ export function createBehaviourTracker({
         if (!likeBtn && !shareBtn) return;
         const post = (likeBtn ?? shareBtn)?.closest<HTMLElement>(POST_SELECTOR);
         if (!post || post.dataset.xcheckFlagged !== "true") return;
-        emit(makeEvent(likeBtn ? "LIKE_FLAGGED" : "SHARE_FLAGGED", post.dataset.xcheckPostId));
+        const postId = post.dataset.xcheckPostId;
+        if (likeBtn) {
+          const wasLiked = likeBtn.classList.contains("text-red-400"); // liked colour
+          emit(makeEvent(wasLiked ? "UNLIKE_FLAGGED" : "LIKE_FLAGGED", postId));
+        } else if (shareBtn) {
+          const wasShared = shareBtn.classList.contains("text-green-400"); // shared colour
+          emit(makeEvent(wasShared ? "UNSHARE_FLAGGED" : "SHARE_FLAGGED", postId));
+        }
       },
       true,
     );

@@ -16,6 +16,9 @@ export const EVENT_WEIGHTS: Record<BehaviourEventType, number> = {
   READ_EXPANDED_WARNING: -8,
   CLICK_TRUSTED_SOURCE: -12,
   TIME_ON_INTERVENTION: -5,
+  // Exact inverses of LIKE_FLAGGED / SHARE_FLAGGED so toggling the action off cancels the raise.
+  UNLIKE_FLAGGED: -10,
+  UNSHARE_FLAGGED: -20,
 };
 
 export function makeEvent(

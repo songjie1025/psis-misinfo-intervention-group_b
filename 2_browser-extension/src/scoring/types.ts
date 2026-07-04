@@ -14,7 +14,11 @@ export type BehaviourEventType =
   | "LONG_DWELL_POST"
   | "READ_EXPANDED_WARNING"
   | "CLICK_TRUSTED_SOURCE"
-  | "TIME_ON_INTERVENTION";
+  | "TIME_ON_INTERVENTION"
+  // Undo signals: un-liking / un-sharing a flagged post reverses the earlier raise, so a
+  // like that is toggled off nets to zero (see behaviour-tracker.ts).
+  | "UNLIKE_FLAGGED"
+  | "UNSHARE_FLAGGED";
 
 export interface BehaviourEvent {
   type: BehaviourEventType;
