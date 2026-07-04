@@ -3,7 +3,7 @@
 // the MutationObserver. Rendering and worker comms are injected.
 import { InterventionDecision } from "../../interventions/types";
 import { WorkerRequest, WorkerResponse } from "../../messaging/messages";
-import { POST_SELECTOR, CHECK_DELAY_MS, postIdOf } from "./constants";
+import { POST_SELECTOR, postIdOf } from "./constants";
 
 export interface PostScannerDeps {
   send(msg: WorkerRequest): Promise<WorkerResponse | undefined>;
@@ -60,10 +60,9 @@ export function createPostScanner({ send, render }: PostScannerDeps): PostScanne
       const posts = Array.from(
         document.querySelectorAll<HTMLElement>(POST_SELECTOR),
       ).filter((el) => !decisions.has(postIdOf(el))); // only NEW; reattachBoxes restores the rest
-      for (const el of posts) {
-        await checkPost(el, postIdOf(el));
-        await new Promise((resolve) => setTimeout(resolve, CHECK_DELAY_MS));
-      }
+      // Verdicts are a local posts.json lookup (no API, no rate limit), so check every new post
+      // in parallel. Interventions appear almost instantly instead of one-every-1.5s.
+      await Promise.all(posts.map((el) => checkPost(el, postIdOf(el))));
     } finally {
       scanning = false;
     }

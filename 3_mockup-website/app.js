@@ -46,9 +46,19 @@ const Model = {
   },
 };
 
+// Fisher-Yates shuffle — returns a new array in random order (does not mutate the input).
+function shuffleArray(array) {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 const Controller = {
   initializePostState(post) {
-      return {
+    return {
       ...post,
       liked: false,
       shared: false,
@@ -70,7 +80,10 @@ const Controller = {
 
     React.useLayoutEffect(() => {
       // Opening a post -> start the detail at the top; returning -> restore the feed.
-      window.scrollTo(0, selectedPostId === null ? scrollPositionRef.current : 0);
+      window.scrollTo(
+        0,
+        selectedPostId === null ? scrollPositionRef.current : 0,
+      );
     }, [selectedPostId]);
 
     React.useEffect(() => {
@@ -81,7 +94,9 @@ const Controller = {
           Model.fetchPosts(),
           Model.fetchComments(),
         ]);
-        setPosts(posts.map(Controller.initializePostState));
+        // Display posts in random order (re-shuffled on every load).
+        const shuffled = shuffleArray(posts.map(Controller.initializePostState));
+        setPosts(shuffled);
         setComments(comments);
       }
 
@@ -89,47 +104,43 @@ const Controller = {
     }, []);
 
     const handleLike = (postId) => {
-      setPosts(prev =>
-        prev.map(post => {
+      setPosts((prev) =>
+        prev.map((post) => {
           if (post.id !== postId) return post;
 
           return {
             ...post,
-            likes: post.liked
-              ? post.likes - 1
-              : post.likes + 1,
-            liked: !post.liked
+            likes: post.liked ? post.likes - 1 : post.likes + 1,
+            liked: !post.liked,
           };
-        })
+        }),
       );
     };
 
     const handleShare = (postId) => {
-      setPosts(prev =>
-        prev.map(post => {
+      setPosts((prev) =>
+        prev.map((post) => {
           if (post.id !== postId) return post;
 
           return {
             ...post,
-            shares: post.shared
-              ? post.shares - 1
-              : post.shares + 1,
-            shared: !post.shared
+            shares: post.shared ? post.shares - 1 : post.shares + 1,
+            shared: !post.shared,
           };
-        })
+        }),
       );
     };
 
     const handleBookmark = (postId) => {
-      setPosts(prev =>
-        prev.map(post => {
+      setPosts((prev) =>
+        prev.map((post) => {
           if (post.id !== postId) return post;
 
           return {
             ...post,
-            bookmarked: !post.bookmarked
+            bookmarked: !post.bookmarked,
           };
-        })
+        }),
       );
     };
 
@@ -246,7 +257,6 @@ function NavBar({ activeTab, onTabChange }) {
   );
 }
 
-
 // SVG Icons
 function HomeIcon() {
   return (
@@ -349,12 +359,15 @@ function ProfileIcon() {
 
 function MoreIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className="w-7 h-7"
-      fill="currentColor"
-    >
-      <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="2"/>
+    <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+      <circle
+        cx="12"
+        cy="12"
+        r="11"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
       <circle cx="6" cy="12" r="1.7" />
       <circle cx="12" cy="12" r="1.7" />
       <circle cx="18" cy="12" r="1.7" />
@@ -413,7 +426,14 @@ function ProfileIconFilled() {
 function MoreIconFilled() {
   return (
     <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
-      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2"/>
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
       <circle cx="8" cy="12" r="1.5" />
       <circle cx="12" cy="12" r="1.5" />
       <circle cx="16" cy="12" r="1.5" />
@@ -474,11 +494,7 @@ function LikeIcon() {
 
 function LikeIconFilled() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className="w-5 h-5"
-      fill="currentColor"
-    >
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54z" />
     </svg>
   );
@@ -502,79 +518,68 @@ function BookmarkIconSmall() {
 
 function BookmarkIconFilledSmall() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className="w-5 h-5"
-      fill="currentColor"
-    >
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
       <path d="M7 4.5h10a1 1 0 011 1V20l-6-4-6 4V5.5a1 1 0 011-1z" />
     </svg>
   );
 }
 
 function Sidebar({ currentPage, onPageChange }) {
-
-const items = [
+  const items = [
     {
       label: "Home",
       icon: HomeIcon,
       activeIcon: HomeIconFilled,
-      page: "home"
+      page: "home",
     },
     {
       label: "Explore",
       icon: ExploreIcon,
       activeIcon: ExploreIconFilled,
-      page: "explore"
+      page: "explore",
     },
     {
       label: "Notifications",
       icon: NotificationIcon,
       activeIcon: NotificationIconFilled,
-      page: "notifications"
+      page: "notifications",
     },
     {
       label: "Messages",
       icon: MessageIcon,
       activeIcon: MessageIconFilled,
-      page: "messages"
+      page: "messages",
     },
     {
       label: "Bookmarks",
       icon: BookmarkIcon,
       activeIcon: BookmarkIconFilled,
-      page: "bookmarks"
+      page: "bookmarks",
     },
     {
       label: "Profile",
       icon: ProfileIcon,
       activeIcon: ProfileIconFilled,
-      page: "profile"
+      page: "profile",
     },
     {
       label: "More",
       icon: MoreIcon,
       activeIcon: MoreIconFilled,
-      page: "more"
+      page: "more",
     },
   ];
 
   return (
     <aside className="w-72 p-4 sticky top-0 self-start h-screen">
       <div className="text-center mb-8 text-3xl">
-        <button
-          onClick={() => onPageChange("home")}
-          className="text-white"
-        >
+        <button onClick={() => onPageChange("home")} className="text-white">
           𝕏
         </button>
       </div>
       <div className="space-y-3">
         {items.map((item) => {
-          const Icon =
-            currentPage === item.page
-              ? item.activeIcon
-              : item.icon;
+          const Icon = currentPage === item.page ? item.activeIcon : item.icon;
 
           return (
             <button
@@ -588,7 +593,11 @@ const items = [
             >
               <div className="flex items-center gap-4">
                 <Icon />
-                <span className={currentPage === item.page ? "font-bold" : "font-normal"}>
+                <span
+                  className={
+                    currentPage === item.page ? "font-bold" : "font-normal"
+                  }
+                >
                   {item.label}
                 </span>
               </div>
@@ -610,7 +619,6 @@ function PostCard({
   onBookmark,
   compact,
 }) {
-
   const containerClass = compact
     ? "cursor-auto px-3 py-3 hover:bg-gray-900/50 transition border-b border-gray-800"
     : "cursor-pointer px-4 py-4 hover:bg-gray-900/50 transition border-b border-gray-800";
@@ -644,7 +652,7 @@ function PostCard({
               compact ? "text-sm leading-6 mt-2" : "text-sm leading-7 mt-2"
             }
           >
-            {post.content}
+            {post.post}
           </p>
 
           <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mt-3">
@@ -666,9 +674,7 @@ function PostCard({
                 if (onShare) onShare(post.id);
               }}
               className={`flex items-center gap-2 transition ${
-                post.shared
-                  ? "text-green-400"
-                  : "hover:text-indigo-400"
+                post.shared ? "text-green-400" : "hover:text-indigo-400"
               }`}
             >
               <RepostIcon />
@@ -682,9 +688,7 @@ function PostCard({
                 if (onLike) onLike(post.id);
               }}
               className={`flex items-center gap-2 transition ${
-                post.liked
-                  ? "text-red-400"
-                  : "hover:text-red-400"
+                post.liked ? "text-red-400" : "hover:text-red-400"
               }`}
             >
               <LikeIcon />
@@ -702,9 +706,11 @@ function PostCard({
                   : "text-white hover:text-sky-500"
               }`}
             >
-              {post.bookmarked
-                ? <BookmarkIconFilledSmall />
-                : <BookmarkIconSmall />}
+              {post.bookmarked ? (
+                <BookmarkIconFilledSmall />
+              ) : (
+                <BookmarkIconSmall />
+              )}
             </button>
           </div>
         </div>
@@ -713,42 +719,44 @@ function PostCard({
   );
 }
 
-function Feed({ posts, comments, activeTab, onCardClick, onLike, onShare, onBookmark }) {
+function Feed({
+  posts,
+  comments,
+  activeTab,
+  onCardClick,
+  onLike,
+  onShare,
+  onBookmark,
+}) {
   const displayedPosts =
-    activeTab === "following"
-      ? posts.filter(post => post.isOwnPost)
-      : posts;
+    activeTab === "following" ? posts.filter((post) => post.isOwnPost) : posts;
 
-if (displayedPosts.length === 0) {
+  if (displayedPosts.length === 0) {
+    return <p className="p-6 text-gray-400">No posts to display.</p>;
+  }
+
   return (
-    <p className="p-6 text-gray-400">
-      No posts to display.
-    </p>
+    <div>
+      {displayedPosts.map((post) => {
+        const commentCount = comments.filter(
+          (comment) => String(comment.postId) === String(post.id),
+        ).length;
+
+        return (
+          <PostCard
+            key={post.id}
+            post={post}
+            commentCount={commentCount}
+            onCardClick={() => onCardClick(post.id)}
+            onComment={() => onCardClick(post.id)}
+            onShare={() => onShare(post.id)}
+            onLike={() => onLike(post.id)}
+            onBookmark={() => onBookmark(post.id)}
+          />
+        );
+      })}
+    </div>
   );
-}
-
-return (
-  <div>
-    {displayedPosts.map((post) => {
-      const commentCount = comments.filter(
-        comment => String(comment.postId) === String(post.id)
-      ).length;
-
-      return (
-        <PostCard
-          key={post.id}
-          post={post}
-          commentCount={commentCount}
-          onCardClick={() => onCardClick(post.id)}
-          onComment={() => onCardClick(post.id)}
-          onShare={() => onShare(post.id)}
-          onLike={() => onLike(post.id)}
-          onBookmark={() => onBookmark(post.id)}
-        />
-      );
-    })}
-  </div>
-);
 }
 
 function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
@@ -784,7 +792,15 @@ function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
   );
 }
 
-function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment, onBookmark}) {
+function PostDetail({
+  post,
+  comments,
+  onLike,
+  onShare,
+  onBack,
+  onAddComment,
+  onBookmark,
+}) {
   const postComments = comments.filter(
     (comment) => String(comment.postId) === String(post.id),
   );
@@ -836,7 +852,7 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment, onB
           </div>
         </div>
 
-        <p className="text-base leading-8 mb-4">{post.content}</p>
+        <p className="text-base leading-8 mb-4">{post.post}</p>
         <div className="pt-4 border-t border-gray-800 -mx-4"></div>
 
         <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mb-2">
@@ -851,9 +867,7 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment, onB
           <button
             onClick={() => onShare(post.id)}
             className={`flex items-center gap-2 transition ${
-              post.shared
-                ? "text-green-400"
-                : "hover:text-indigo-400"
+              post.shared ? "text-green-400" : "hover:text-indigo-400"
             }`}
           >
             <RepostIcon />
@@ -863,9 +877,7 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment, onB
           <button
             onClick={() => onLike(post.id)}
             className={`flex items-center gap-2 transition ${
-              post.liked
-                ? "text-red-400"
-                : "hover:text-red-400"
+              post.liked ? "text-red-400" : "hover:text-red-400"
             }`}
           >
             {post.liked ? <LikeIconFilled /> : <LikeIcon />}
@@ -875,14 +887,14 @@ function PostDetail({ post, comments, onLike, onShare, onBack, onAddComment, onB
           <button
             onClick={() => onBookmark(post.id)}
             className={`flex items-center gap-2 transition ${
-              post.bookmarked
-                ? "text-sky-500"
-                : "text-white hover:text-sky-500"
+              post.bookmarked ? "text-sky-500" : "text-white hover:text-sky-500"
             }`}
           >
-            {post.bookmarked
-              ? <BookmarkIconFilledSmall />
-              : <BookmarkIconSmall />}
+            {post.bookmarked ? (
+              <BookmarkIconFilledSmall />
+            ) : (
+              <BookmarkIconSmall />
+            )}
           </button>
         </div>
       </article>
