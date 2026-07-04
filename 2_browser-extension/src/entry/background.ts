@@ -114,6 +114,7 @@ async function handleRequest(req: WorkerRequest): Promise<WorkerResponse> {
       return {
         type: "ACK",
         tierZone: tierForScore(updated.score) ?? "none",
+        score: updated.score,
       };
     }
   }

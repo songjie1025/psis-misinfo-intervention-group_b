@@ -29,6 +29,9 @@ export interface AckResponse {
   // Current tier zone after the event ("none" | "T1" | "T2" | "T3"). When this changes, the
   // content-script re-evaluates visible posts so interventions follow the live Risk Score.
   tierZone?: string;
+  // Live Risk Score after the event (0–100). Used by the on-page debug HUD; band/tier are
+  // derived from it on the content-script side (single source of truth).
+  score?: number;
 }
 
 export interface ErrorResponse {

@@ -5,6 +5,7 @@ import { initXCheckPanel } from "../ui/panel";
 import { createWorkerClient } from "./components/worker-client";
 import { createPostScanner } from "./components/post-scanner";
 import { createBehaviourTracker } from "./components/behaviour-tracker";
+import { createBehaviourHud } from "./components/behaviour-hud";
 import { renderDecision } from "./components/intervention-renderer";
 import { showStaleNotice } from "./components/stale-notice";
 
@@ -15,10 +16,14 @@ const worker = createWorkerClient(() => {
   scanner.stop();
 });
 
+// Always-on debug HUD showing the live risk-score logic (score, band, tier, event log, meters).
+const hud = createBehaviourHud();
+
 // Behaviour signals -> worker; a tier-zone change re-evaluates visible posts.
 const behaviour = createBehaviourTracker({
   send: worker.send,
   onZoneChange: () => void scanner.reevaluateVisible(),
+  hud,
 });
 
 // Scanning + rendering; the renderer reports user interaction back through the behaviour tracker.
