@@ -58,6 +58,10 @@ export function renderDecision(
   el.prepend(box);
 
   box.addEventListener("click", (e) => {
+    // The box lives inside the post <article>, whose click handler opens the post detail view.
+    // Stop the event here so interacting with the intervention (incl. opening a source in a new
+    // tab) never navigates the feed. Source links still open because we don't preventDefault.
+    e.stopPropagation();
     const link = (e.target as HTMLElement).closest("a");
     emit(makeEvent(link ? "CLICK_TRUSTED_SOURCE" : "READ_EXPANDED_WARNING", decision.postId));
   });
