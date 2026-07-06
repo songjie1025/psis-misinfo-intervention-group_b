@@ -29,7 +29,8 @@ const behaviour = createBehaviourTracker({
 // Scanning + rendering; the renderer reports user interaction back through the behaviour tracker.
 const scanner = createPostScanner({
   send: worker.send,
-  render: (el, decision) => renderDecision(el, decision, behaviour.emit),
+  render: (el, decision, onDismiss) =>
+    renderDecision(el, decision, behaviour.emit, onDismiss),
 });
 
 void initXCheckPanel();
