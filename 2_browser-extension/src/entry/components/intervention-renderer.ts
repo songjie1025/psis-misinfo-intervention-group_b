@@ -36,6 +36,7 @@ let tier3GateInstalled = false;
 let tier3Overlay: HTMLElement | null = null;
 let tier3Button: HTMLElement | null = null;
 let tier3RemainingMs = 3000;
+let tier3ProceedLabel = "Continue action";
 let tier3Timer: number | null = null;
 let tier3PreviousBodyOverflow = "";
 const tier3ReplayTargets = new WeakSet<HTMLElement>();
@@ -83,8 +84,15 @@ function updateTier3OverlayText(): void {
     proceed.textContent =
       tier3RemainingMs > 0
         ? `Please wait (${Math.ceil(tier3RemainingMs / 1000)})`
-        : "Continue action";
+        : tier3ProceedLabel;
   }
+}
+
+function tier3ProceedLabelFor(action: HTMLElement): string {
+  if (action.matches("[data-xcheck-like]")) return "Like anyways";
+  if (action.matches("[data-xcheck-comment]")) return "Post comment anyways";
+  if (action.matches("[data-xcheck-share]")) return "Share anyways";
+  return "Continue action";
 }
 
 // Show the overlay (popup) and start the countdown timer.
@@ -92,7 +100,8 @@ function updateTier3OverlayText(): void {
 function openTier3Overlay(target: HTMLElement): void {
   closeTier3Overlay();
   tier3Button = target;
-  tier3RemainingMs = 3000;
+  tier3ProceedLabel = tier3ProceedLabelFor(target);
+  tier3RemainingMs = 6000;
   tier3PreviousBodyOverflow = document.body.style.overflow;
   document.body.style.overflow = "hidden";
 
@@ -100,13 +109,13 @@ function openTier3Overlay(target: HTMLElement): void {
   tier3Overlay.id = TIER3_OVERLAY_ID;
   tier3Overlay.innerHTML = `
     <div class="xcheck-tier3-card" role="dialog" aria-modal="true" aria-labelledby="xcheck-tier3-title">
-      <div class="xcheck-tier3-badge">T3</div>
+      <div class="xcheck-tier3-badge">Timeout</div>
       <h2 id="xcheck-tier3-title">Are you really sure?</h2>
       <p>This action is currently blocked for this post. Please take a moment to consider whether you really want to proceed.</p>
       <p data-xcheck-tier3-countdown></p>
       <div class="xcheck-tier3-actions">
         <button type="button" class="xcheck-tier3-secondary" data-xcheck-tier3-cancel>Cancel</button>
-        <button type="button" class="xcheck-tier3-primary" data-xcheck-tier3-proceed disabled>Please wait (${Math.ceil(tier3RemainingMs / 1000)})</button>
+        <button type="button" class="xcheck-tier3-primary" data-xcheck-tier3-proceed disabled>${tier3ProceedLabel} (${Math.ceil(tier3RemainingMs / 1000)})</button>
       </div>
     </div>
   `;
