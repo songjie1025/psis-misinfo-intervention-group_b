@@ -657,6 +657,7 @@ function PostCard({
 
           <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mt-3">
             <button
+              data-xcheck-comment="true"
               onClick={(e) => {
                 e.stopPropagation();
                 if (onComment) onComment();
@@ -857,6 +858,7 @@ function PostDetail({
 
         <div className="flex items-center justify-between gap-6 text-sm text-gray-500 mb-2">
           <button
+            data-xcheck-comment="true"
             onClick={() => replyRef.current && replyRef.current.focus()}
             className="flex items-center gap-2 hover:text-blue-400 transition"
           >
@@ -865,6 +867,7 @@ function PostDetail({
           </button>
 
           <button
+            data-xcheck-share="true"
             onClick={() => onShare(post.id)}
             className={`flex items-center gap-2 transition ${
               post.shared ? "text-green-400" : "hover:text-indigo-400"
@@ -875,6 +878,7 @@ function PostDetail({
           </button>
 
           <button
+            data-xcheck-like="true"
             onClick={() => onLike(post.id)}
             className={`flex items-center gap-2 transition ${
               post.liked ? "text-red-400" : "hover:text-red-400"

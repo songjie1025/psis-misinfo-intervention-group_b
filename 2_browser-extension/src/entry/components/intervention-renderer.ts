@@ -87,8 +87,8 @@ function updateTier3OverlayText(): void {
   }
 }
 
-  // Show the overlay (popup) and start the countdown timer.
-  // The user can cancel or wait for the timer to finish before proceeding.
+// Show the overlay (popup) and start the countdown timer.
+// The user can cancel or wait for the timer to finish before proceeding.
 function openTier3Overlay(target: HTMLElement): void {
   closeTier3Overlay();
   tier3Button = target;
@@ -132,8 +132,7 @@ function openTier3Overlay(target: HTMLElement): void {
   }, 250);
 }
 
-// Intercept clicks on like/share/comment buttons for T3 posts and
-// show the overlay instead of proceeding.
+// Click listener for like/share/comment on posts when Tier 3 interv. is active
 function onTier3Click(e: MouseEvent): void {
   const target = e.target as HTMLElement | null;
   if (!target) return;
@@ -157,7 +156,7 @@ function onTier3Click(e: MouseEvent): void {
   openTier3Overlay(action);
 }
 
-// CSS styles for the overlay and card are injected into the page.
+// Tier 3 interv. CSS styles for the overlay and card are injected into the page
 function ensureTier3Styles(): void {
   if (document.getElementById(TIER3_STYLE_ID)) return;
 
