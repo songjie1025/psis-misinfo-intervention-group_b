@@ -4,7 +4,6 @@
 import { makeEvent } from "../../scoring/behaviour";
 import { BehaviourEvent } from "../../scoring/types";
 import { WorkerRequest, WorkerResponse } from "../../messaging/messages";
-import { BehaviourHud } from "./behaviour-hud";
 import {
   POST_SELECTOR,
   SHORT_DWELL_MS,
@@ -16,8 +15,6 @@ import {
 export interface BehaviourTrackerDeps {
   send(msg: WorkerRequest): Promise<WorkerResponse | undefined>;
   onZoneChange(): void;
-  /** Optional debug HUD: fed each event's live score and continuous dwell/scroll metrics. */
-  hud?: BehaviourHud;
 }
 
 export interface BehaviourTracker {
@@ -28,21 +25,13 @@ export interface BehaviourTracker {
 export function createBehaviourTracker({
   send,
   onZoneChange,
-  hud,
 }: BehaviourTrackerDeps): BehaviourTracker {
   let lastZone: string | undefined;
-
-  // Live metrics for the debug HUD: the enter-time of the post currently in view, and the
-  // most recent scroll velocity (decays to 0 when the user stops).
-  let currentEnter: number | undefined;
-  let lastVelocity = 0;
-  let lastScrollAt = 0;
 
   /** Send a behaviour event and, if it moved the Risk Score across a tier boundary, notify. */
   function emit(event: BehaviourEvent): void {
     void send({ type: "BEHAVIOUR_EVENT", event }).then((res) => {
       if (!res || res.type !== "ACK") return;
-      if (hud && typeof res.score === "number") hud.logEvent(event, res.score);
       if (res.tierZone && res.tierZone !== lastZone) {
         lastZone = res.tierZone;
         onZoneChange();
@@ -57,14 +46,11 @@ export function createBehaviourTracker({
         for (const entry of entries) {
           const el = entry.target as HTMLElement;
           if (entry.isIntersecting) {
-            const now = Date.now();
-            enterTimes.set(el, now);
-            currentEnter = now; // HUD: newest post in view
+            enterTimes.set(el, Date.now());
           } else {
             const enteredAt = enterTimes.get(el);
             if (enteredAt === undefined) continue;
             enterTimes.delete(el);
-            currentEnter = undefined; // HUD: no post in view
 
             if (el.dataset.xcheckDwellCounted) continue; // count each post once
             const dwell = Date.now() - enteredAt;
@@ -93,20 +79,9 @@ export function createBehaviourTracker({
     let lastY = window.scrollY;
     let lastT = Date.now();
     let throttled: number | undefined;
-    // Cheap per-event velocity for the HUD meter (separate from the throttled emit below).
-    let hudY = window.scrollY;
-    let hudT = Date.now();
     window.addEventListener(
       "scroll",
       () => {
-        // HUD velocity: measured on every scroll event so the meter is responsive.
-        const nowH = Date.now();
-        const dtH = (nowH - hudT) / 1000;
-        if (dtH > 0) lastVelocity = Math.abs(window.scrollY - hudY) / dtH;
-        hudY = window.scrollY;
-        hudT = nowH;
-        lastScrollAt = nowH;
-
         if (throttled !== undefined) return;
         throttled = window.setTimeout(() => {
           const now = Date.now();
@@ -123,16 +98,6 @@ export function createBehaviourTracker({
       },
       { passive: true },
     );
-
-    // Feed the HUD live dwell/scroll meters. Velocity decays to 0 shortly after scrolling stops.
-    if (hud) {
-      window.setInterval(() => {
-        const now = Date.now();
-        const dwellMs = currentEnter !== undefined ? now - currentEnter : 0;
-        const velocity = now - lastScrollAt > 400 ? 0 : lastVelocity;
-        hud.setMetrics({ dwellMs, velocity });
-      }, 150);
-    }
   }
 
   // Like / share of a FLAGGED post raises the Risk Score (FR4). One delegated capture-phase
