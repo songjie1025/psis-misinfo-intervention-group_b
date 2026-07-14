@@ -51,17 +51,19 @@ export function installTier3Gate({ waitMs = 3000 }: Tier3GateOptions = {}): Tier
     if (text) {
       text.textContent =
         remainingMs > 0
-          ? `Bitte warte noch ${Math.ceil(remainingMs / 1000)} Sekunden.`
-          : "Du kannst jetzt fortfahren.";
+          ? `Please wait ${Math.ceil(remainingMs / 1000)} seconds.`
+          : "You can proceed now.";
     }
     const proceed = overlay.querySelector<HTMLButtonElement>("[data-xcheck-tier3-proceed]");
     if (proceed) {
       proceed.disabled = remainingMs > 0;
       proceed.textContent =
-        remainingMs > 0 ? `Bitte warten (${Math.ceil(remainingMs / 1000)})` : "Aktion fortsetzen";
+        remainingMs > 0 ? `Please wait (${Math.ceil(remainingMs / 1000)})` : "Continue Action";
     }
   }
 
+  // Show the overlay (popup) and start the countdown timer
+  // The user can cancel or wait for the timer to finish before proceeding
   function openOverlay(target: HTMLElement): void {
     closeOverlay();
     button = target;
@@ -74,12 +76,12 @@ export function installTier3Gate({ waitMs = 3000 }: Tier3GateOptions = {}): Tier
     overlay.innerHTML = `
       <div class="xcheck-tier3-card" role="dialog" aria-modal="true" aria-labelledby="xcheck-tier3-title">
         <div class="xcheck-tier3-badge">T3</div>
-        <h2 id="xcheck-tier3-title">Bitte nochmal kurz überlegen</h2>
-        <p>Diese Aktion ist bei diesem Beitrag vorerst blockiert. Nimm dir noch einen Moment Zeit und prüfe, ob du das wirklich tun möchtest.</p>
+        <h2 id="xcheck-tier3-title">Are you really sure?</h2>
+        <p>This action is currently blocked for this post. Please take a moment to consider whether you really want to proceed.</p>
         <p data-xcheck-tier3-countdown></p>
         <div class="xcheck-tier3-actions">
-          <button type="button" class="xcheck-tier3-secondary" data-xcheck-tier3-cancel>Abbrechen</button>
-          <button type="button" class="xcheck-tier3-primary" data-xcheck-tier3-proceed disabled>Bitte warten (${Math.ceil(remainingMs / 1000)})</button>
+          <button type="button" class="xcheck-tier3-secondary" data-xcheck-tier3-cancel>Cancel</button>
+          <button type="button" class="xcheck-tier3-primary" data-xcheck-tier3-proceed disabled>Please wait (${Math.ceil(remainingMs / 1000)})</button>
         </div>
       </div>
     `;
@@ -105,6 +107,8 @@ export function installTier3Gate({ waitMs = 3000 }: Tier3GateOptions = {}): Tier
     }, 250);
   }
 
+  // Intercept clicks on like/share/comment buttons for T3 posts and
+  // show the overlay instead of proceeding
   function onClick(e: MouseEvent): void {
     const target = e.target as HTMLElement | null;
     if (!target) return;
@@ -138,6 +142,7 @@ export function installTier3Gate({ waitMs = 3000 }: Tier3GateOptions = {}): Tier
   };
 }
 
+// CSS styles for the overlay and card are injected into the page
 function ensureStyles(): void {
   if (document.getElementById(STYLE_ID)) return;
 
