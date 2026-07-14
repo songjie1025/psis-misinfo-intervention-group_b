@@ -31,7 +31,8 @@ export function createBehaviourTracker({
   /** Send a behaviour event and, if it moved the Risk Score across a tier boundary, notify. */
   function emit(event: BehaviourEvent): void {
     void send({ type: "BEHAVIOUR_EVENT", event }).then((res) => {
-      if (res && res.type === "ACK" && res.tierZone && res.tierZone !== lastZone) {
+      if (!res || res.type !== "ACK") return;
+      if (res.tierZone && res.tierZone !== lastZone) {
         lastZone = res.tierZone;
         onZoneChange();
       }
@@ -50,6 +51,7 @@ export function createBehaviourTracker({
             const enteredAt = enterTimes.get(el);
             if (enteredAt === undefined) continue;
             enterTimes.delete(el);
+
             if (el.dataset.xcheckDwellCounted) continue; // count each post once
             const dwell = Date.now() - enteredAt;
             const postId = postIdOf(el);
@@ -100,6 +102,11 @@ export function createBehaviourTracker({
 
   // Like / share of a FLAGGED post raises the Risk Score (FR4). One delegated capture-phase
   // listener so it fires even though the page calls stopPropagation on the button.
+  //
+  // Like/share are TOGGLES: a second click un-likes / un-shares. We run in the capture phase,
+  // BEFORE React flips the button's state, so the button's current colour class tells us the
+  // pre-click state — liking emits the raise, un-liking emits the exact inverse so repeated
+  // toggling nets to zero (the score only stays raised while the post is actually liked/shared).
   function trackLikesAndShares(): void {
     document.addEventListener(
       "click",
@@ -110,7 +117,14 @@ export function createBehaviourTracker({
         if (!likeBtn && !shareBtn) return;
         const post = (likeBtn ?? shareBtn)?.closest<HTMLElement>(POST_SELECTOR);
         if (!post || post.dataset.xcheckFlagged !== "true") return;
-        emit(makeEvent(likeBtn ? "LIKE_FLAGGED" : "SHARE_FLAGGED", post.dataset.xcheckPostId));
+        const postId = post.dataset.xcheckPostId;
+        if (likeBtn) {
+          const wasLiked = likeBtn.classList.contains("text-red-400"); // liked colour
+          emit(makeEvent(wasLiked ? "UNLIKE_FLAGGED" : "LIKE_FLAGGED", postId));
+        } else if (shareBtn) {
+          const wasShared = shareBtn.classList.contains("text-green-400"); // shared colour
+          emit(makeEvent(wasShared ? "UNSHARE_FLAGGED" : "SHARE_FLAGGED", postId));
+        }
       },
       true,
     );
