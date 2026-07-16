@@ -828,7 +828,11 @@ function PostDetail({
         </div>
       </div>
 
-      <article className="px-4 py-4 border-b border-gray-800">
+      <article
+        data-xcheck-post=""
+        data-xcheck-post-id={post.id}
+        className="px-4 py-4 border-b border-gray-800"
+      >
         <div className="flex items-start gap-3 mb-3">
           <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold">
             {post.author.charAt(0)}
