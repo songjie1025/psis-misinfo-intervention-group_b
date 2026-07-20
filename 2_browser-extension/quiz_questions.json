@@ -1,0 +1,272 @@
+[
+    {
+        "id": 1,
+        "verdicts": {
+            "claim": {
+                "content": "Artificial Intelligence poses no risk to job automation according to tech experts."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Fake Experts",
+            "sources": []
+        },
+        "post": "Over 10,000 certified tech developers and software engineers just signed an open letter stating that Artificial Intelligence poses absolutely zero risk to job automation. Don't let alarmist 'AI ethicists' scare you—listen to the actual tech professionals who know the code! 💻🤖 #AITakeover",
+        "author": "Tech Visionary",
+        "username": "techvisionary",
+        "category": "Technology",
+        "timestamp": "2h",
+        "likes": 1240,
+        "shares": 310
+    },
+    {
+        "id": 2,
+        "verdicts": {
+            "claim": {
+                "content": "Inflation is beneficial for the middle class."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Fake Experts",
+            "sources": []
+        },
+        "post": "Why are we trusting economic policy to academic elites when a highly successful local real estate broker and accountant just proved that inflation is actually good for the middle class? As someone with a business degree, his math makes sense. Do your own research! 📊🧵",
+        "author": "Econ Insider",
+        "username": "econinsider",
+        "category": "Economics",
+        "timestamp": "4h",
+        "likes": 852,
+        "shares": 145
+    },
+    {
+        "id": 3,
+        "verdicts": {
+            "claim": {
+                "content": "Viral outbreaks require no public health precautions."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Fake Experts",
+            "sources": []
+        },
+        "post": "Just read an incredible article by a prominent cosmetic surgeon explaining why the new viral outbreak is completely harmless and requires no public health changes. Finally, a real doctor speaking the truth instead of bureaucratic health agencies! 🩺📺 #PublicHealth",
+        "author": "Health Freedom",
+        "username": "healthfreedom",
+        "category": "Health",
+        "timestamp": "6h",
+        "likes": 2310,
+        "shares": 490
+    },
+    {
+        "id": 4,
+        "verdicts": {
+            "claim": {
+                "content": "Dietary sugar cannot be harmful because cells use glucose for energy."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Logical Fallacies",
+            "sources": []
+        },
+        "post": "The government wants us to regulate sugar in foods, but glucose is what our brains use for energy! How can something that is literally essential for cellular life and keeps us alive be considered a 'health hazard'? The logic makes zero sense. 🧠🍬 #HealthTips",
+        "author": "Wellness Daily",
+        "username": "wellnessdaily",
+        "category": "Health",
+        "timestamp": "1h",
+        "likes": 3400,
+        "shares": 820
+    },
+    {
+        "id": 5,
+        "verdicts": {
+            "claim": {
+                "content": "Historical findings are invalid because archaeologists previously revised past theories."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Logical Fallacies",
+            "sources": []
+        },
+        "post": "Historians used to claim that the ancient ruins in this region were built by a lost maritime civilization. Now they say it was an agrarian society. If they couldn't even get the basic economy of the culture right back then, why should we trust anything they say now? 🏛️❌",
+        "author": "Past Explorer",
+        "username": "pastexplorer",
+        "category": "History",
+        "timestamp": "3h",
+        "likes": 620,
+        "shares": 95
+    },
+    {
+        "id": 6,
+        "verdicts": {
+            "claim": {
+                "content": "Green battery technology is ineffective because an individual battery failed."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Logical Fallacies",
+            "sources": []
+        },
+        "post": "My smartphone battery completely died today after only two hours of use. So much for 'revolutionary advancements in green battery technology'! I guess the tech labs forgot to check how phones actually work in the real world. 😂📱 #TechFail #Gadgets",
+        "author": "Gadget Guy",
+        "username": "gadgetguy",
+        "category": "Technology",
+        "timestamp": "5h",
+        "likes": 1890,
+        "shares": 230
+    },
+    {
+        "id": 7,
+        "verdicts": {
+            "claim": {
+                "content": "Public transit investment is invalid because precise traffic jams cannot be predicted."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Impossible Expectations",
+            "sources": []
+        },
+        "post": "Traffic engineers admit they can't accurately predict the exact minute a traffic jam will form on my commute tomorrow. Yet, they expect us to spend billions on new public transit based on what they think city congestion will look like in 2040? Total guesswork. 🚗🔮",
+        "author": "Commuter Voice",
+        "username": "commutervoice",
+        "category": "Infrastructure",
+        "timestamp": "2h",
+        "likes": 945,
+        "shares": 180
+    },
+    {
+        "id": 8,
+        "verdicts": {
+            "claim": {
+                "content": "Ancient history timelines are unproven unless every single day is documented."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Impossible Expectations",
+            "sources": []
+        },
+        "post": "Until modern archaeologists can provide 100% absolute proof and intact written records for every single day of this ancient pharaoh's reign, the current timeline of the dynasty remains nothing more than an unproven, highly volatile theory. 🎚️👑 #History",
+        "author": "Ancient Secrets",
+        "username": "ancientsecrets",
+        "category": "History",
+        "timestamp": "7h",
+        "likes": 410,
+        "shares": 62
+    },
+    {
+        "id": 9,
+        "verdicts": {
+            "claim": {
+                "content": "Economic science is invalid because predictive models contain variations."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Impossible Expectations",
+            "sources": []
+        },
+        "post": "Every single economic model tracking inflation has minor variations and uncertainties. If economic science was actually 'settled,' every single simulation would give us the exact same numbers. Until the data is flawless and completely unanimous, wrap it up. 📉🤷‍♂️",
+        "author": "Market Skeptic",
+        "username": "marketskeptic",
+        "category": "Economics",
+        "timestamp": "8h",
+        "likes": 1560,
+        "shares": 310
+    },
+    {
+        "id": 10,
+        "verdicts": {
+            "claim": {
+                "content": "The digital economy is failing based on a short-term stock drop."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Cherry Picking",
+            "sources": []
+        },
+        "post": "Look at the official stock market data from Tuesday to Thursday last week—tech stocks actually dropped! The long-term digital economy boom has officially broken down and the tech era has paused. The media won't tell you this! 📉🤫 #Finance #Tech",
+        "author": "Trade Trends",
+        "username": "tradetrends",
+        "category": "Economics",
+        "timestamp": "1h",
+        "likes": 2780,
+        "shares": 540
+    },
+    {
+        "id": 11,
+        "verdicts": {
+            "claim": {
+                "content": "Declining global literacy rates are a false narrative based on a single school's success."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Cherry Picking",
+            "sources": []
+        },
+        "post": "Everyone is panicking about declining literacy rates, but a new study shows that a single private academy in Boston actually saw reading scores increase this past semester. The mainstream education crisis narrative is completely falling apart. 📚👀",
+        "author": "Edu Watch",
+        "username": "eduwatch",
+        "category": "Education",
+        "timestamp": "4h",
+        "likes": 1120,
+        "shares": 190
+    },
+    {
+        "id": 12,
+        "verdicts": {
+            "claim": {
+                "content": "Electric vehicles are a corporate failure based on sales in one rural location."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Cherry Picking",
+            "sources": []
+        },
+        "post": "We keep hearing that electric vehicle sales are taking over the world, but a dealership in rural Wyoming just had their slowest month of EV sales in a year. Local data doesn't lie. Stop falling for the corporate hype. 🚗🔋",
+        "author": "Auto Reality",
+        "username": "autoreality",
+        "category": "Technology",
+        "timestamp": "5h",
+        "likes": 3100,
+        "shares": 720
+    },
+    {
+        "id": 13,
+        "verdicts": {
+            "claim": {
+                "content": "Cardiovascular health guidelines are a fabricated conspiracy by pharmaceutical companies."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Conspiracy Theories",
+            "sources": []
+        },
+        "post": "Follow the money. Cardiovascular health guidelines are a massive, multi-billion-dollar medical hoax designed by corrupt pharmaceutical giants to secure endless government subsidies for statins. If they admit healthy eating is enough, their funding disappears overnight. 💰💊 #BigPharma",
+        "author": "Cure Culture",
+        "username": "cureculture",
+        "category": "Health",
+        "timestamp": "3h",
+        "likes": 5210,
+        "shares": 1140
+    },
+    {
+        "id": 14,
+        "verdicts": {
+            "claim": {
+                "content": "Digital currency is a plot by global elites to remove physical cash and control finances."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Conspiracy Theories",
+            "sources": []
+        },
+        "post": "The entire 'Digital Currency' narrative was cooked up by globalist elites and central banks. It’s a coordinated scam to eliminate physical cash, track every single transaction you make, and strip away individual financial freedom. Wake up people! 👁️💳",
+        "author": "Freedom First",
+        "username": "freedomfirst",
+        "category": "Economics",
+        "timestamp": "6h",
+        "likes": 4890,
+        "shares": 980
+    },
+    {
+        "id": 15,
+        "verdicts": {
+            "claim": {
+                "content": "Museum curators are intentionally fabricating the historical timeline."
+            },
+            "label": "MISLEADING",
+            "flicc_technique": "Conspiracy Theories",
+            "sources": []
+        },
+        "post": "Remember when those leaked emails showed museum curators actively trying to hide out-of-place artifacts and manipulate their excavation charts? They are literally fabricating the historical timeline to push a specific political agenda. The truth is out there. 🏛️🚨",
+        "author": "Hidden Timeline",
+        "username": "hiddentimeline",
+        "category": "History",
+        "timestamp": "9h",
+        "likes": 1730,
+        "shares": 340
+    }
+]
