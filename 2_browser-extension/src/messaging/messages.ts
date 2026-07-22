@@ -1,6 +1,7 @@
 // The wire contract between content-script and the service worker (§4).
 import { BehaviourEvent } from "../scoring/types";
 import { InterventionDecision } from "../interventions/types";
+import { QuizPayload } from "../quiz/types";
 
 // ---- content-script -> service worker ----
 
@@ -15,7 +16,12 @@ export interface BehaviourEventMessage {
   event: BehaviourEvent;
 }
 
-export type WorkerRequest = CheckPostRequest | BehaviourEventMessage;
+/** Ask for a random quiz question (feed intervention, unrelated to the Risk Score). */
+export interface GetQuizRequest {
+  type: "GET_QUIZ";
+}
+
+export type WorkerRequest = CheckPostRequest | BehaviourEventMessage | GetQuizRequest;
 
 // ---- service worker -> content-script ----
 
@@ -36,4 +42,10 @@ export interface ErrorResponse {
   message: string;
 }
 
-export type WorkerResponse = DecisionResponse | AckResponse | ErrorResponse;
+export interface QuizResponse {
+  type: "QUIZ";
+  // null when quiz_questions.json has no usable entries.
+  quiz: QuizPayload | null;
+}
+
+export type WorkerResponse = DecisionResponse | AckResponse | ErrorResponse | QuizResponse;

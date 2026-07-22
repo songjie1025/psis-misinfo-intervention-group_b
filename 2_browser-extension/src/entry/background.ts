@@ -9,6 +9,7 @@ import {
   WorkerResponse,
 } from "../messaging/messages";
 import { factCheck, FactCheckResult } from "../pipeline/mockFactCheck";
+import { getRandomQuiz } from "../quiz/quizBank";
 import { store } from "../storage/store";
 import { bandFor } from "../scoring/riskScore";
 import { applyEvent, initialState } from "../scoring/learning";
@@ -96,10 +97,17 @@ async function handleCheckPost(req: CheckPostRequest): Promise<WorkerResponse> {
   };
 }
 
+async function handleGetQuiz(): Promise<WorkerResponse> {
+  const quiz = await getRandomQuiz();
+  return { type: "QUIZ", quiz };
+}
+
 async function handleRequest(req: WorkerRequest): Promise<WorkerResponse> {
   switch (req.type) {
     case "CHECK_POST":
       return handleCheckPost(req);
+    case "GET_QUIZ":
+      return handleGetQuiz();
     case "BEHAVIOUR_EVENT": {
       const profile = await store.getProfile();
       const state = await getOrInitRiskState(profile);

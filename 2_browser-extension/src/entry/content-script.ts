@@ -7,6 +7,7 @@ import { createPostScanner } from "./components/post-scanner";
 import { createBehaviourTracker } from "./components/behaviour-tracker";
 import { renderDecision } from "./components/intervention-renderer";
 import { showStaleNotice } from "./components/stale-notice";
+import { createQuizInjector } from "./components/quiz-injector";
 
 // Worker comms. On the first "extension reloaded" error it shows the stale banner and stops the
 // scanner's observer, so we stop talking to the dead worker but the page tells the user to refresh.
@@ -28,6 +29,10 @@ const scanner = createPostScanner({
     renderDecision(el, decision, behaviour.emit, onDismiss),
 });
 
+// Periodic misinformation-detection quiz cards (independent of Risk Score / verdicts).
+const quiz = createQuizInjector({ send: worker.send });
+
 void initXCheckPanel();
 scanner.start();
 behaviour.start();
+quiz.start();

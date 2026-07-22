@@ -84,6 +84,14 @@ export const store = {
   setOnboardingComplete: (v: boolean) =>
     set(STORAGE_KEYS.onboardingComplete, v),
 
+  /** Epoch ms until which quiz insertion is suppressed (0 = no cooldown active). Persisted so a
+   *  page refresh doesn't immediately re-show a quiz the user just dismissed. */
+  getQuizCooldownUntil: async (): Promise<number> => {
+    const v = await get<number>(STORAGE_KEYS.quizCooldownUntil);
+    return typeof v === "number" && Number.isFinite(v) ? v : 0;
+  },
+  setQuizCooldownUntil: (until: number) => set(STORAGE_KEYS.quizCooldownUntil, until),
+
   /** "Clear my data": wipe all X-Check local data (privacy reset). */
   clearAll: (): Promise<void> => chrome.storage.local.clear(),
 };

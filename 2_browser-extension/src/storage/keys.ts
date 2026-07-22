@@ -6,4 +6,7 @@ export const STORAGE_KEYS = {
   riskState: "xcheck.riskState",
   apiKeys: "xcheck.apiKeys",
   interactionLog: "xcheck.interactionLog",
+  // Epoch ms until which quiz cards are suppressed after the user taps "Not interested" (0 = no
+  // active cooldown).
+  quizCooldownUntil: "xcheck.quizCooldownUntil",
 } as const;
