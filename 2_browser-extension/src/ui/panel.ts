@@ -7,6 +7,8 @@ import { buildProfile } from "../profile/profile";
 import { baselineFromProfile } from "../scoring/riskScore";
 import { initialState } from "../scoring/learning";
 import { store } from "../storage/store";
+import { aggregate } from "../dashboard/stats";
+import { DashboardRange, DashboardSummary } from "../dashboard/types";
 import {
   AnswerValue,
   BigFiveTrait,
@@ -163,13 +165,87 @@ async function renderResults(panel: HTMLElement, note = ""): Promise<void> {
     (note ? `<p class="xcheck-intro" style="color:#1d9bf0">${note}</p>` : "") +
       rows +
       pol +
+      `<button class="xcheck-btn" id="xcheck-stats">View my interactions</button>` +
       `<button class="xcheck-btn secondary" id="xcheck-redo">Redo test</button>`,
   );
 
   wireClose(panel);
   panel
+    .querySelector("#xcheck-stats")
+    ?.addEventListener("click", () => void renderStats(panel));
+  panel
     .querySelector("#xcheck-redo")
     ?.addEventListener("click", () => renderQuestionnaire(panel));
+}
+
+// ---- Interaction stats view ----
+const STATS_RANGES: { id: DashboardRange; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "week", label: "Week" },
+  { id: "month", label: "Month" },
+];
+const STATS_ACTIONS: { type: string; label: string; color: string }[] = [
+  { type: "SHARE_FLAGGED", label: "Shared a flagged post", color: "#e0245e" },
+  { type: "LIKE_FLAGGED", label: "Liked a flagged post", color: "#e0245e" },
+  { type: "DISMISS_INTERVENTION", label: "Dismissed the warning", color: "#e0245e" },
+  { type: "CLICK_TRUSTED_SOURCE", label: "Opened a source", color: "#1d9bf0" },
+  { type: "READ_EXPANDED_WARNING", label: "Read the warning", color: "#1d9bf0" },
+];
+let statsRange: DashboardRange = "today";
+
+async function renderStats(panel: HTMLElement): Promise<void> {
+  const summary = aggregate(await store.getInteractionLog(), statsRange, Date.now());
+
+  const seg = STATS_RANGES.map(
+    (r) =>
+      `<button class="xcheck-seg-btn${r.id === statsRange ? " active" : ""}" ` +
+      `data-range="${r.id}">${r.label}</button>`,
+  ).join("");
+
+  const body =
+    summary.seen === 0
+      ? `<p class="xcheck-intro">No flagged posts seen in this period yet. Browse the feed so ` +
+        `X-Check can show warnings, then check back here.</p>`
+      : statsHero(summary) + statsBars(summary);
+
+  panel.innerHTML = shell(
+    "Your interactions",
+    `<div class="xcheck-seg">${seg}</div>${body}` +
+      `<button class="xcheck-btn secondary" id="xcheck-back">Back to profile</button>`,
+  );
+
+  wireClose(panel);
+  panel.querySelectorAll<HTMLElement>(".xcheck-seg-btn").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      statsRange = (btn.dataset.range as DashboardRange) ?? "today";
+      void renderStats(panel);
+    }),
+  );
+  panel
+    .querySelector("#xcheck-back")
+    ?.addEventListener("click", () => void renderResults(panel));
+}
+
+function statsHero(s: DashboardSummary): string {
+  const noun = s.seen === 1 ? "flagged post" : "flagged posts";
+  return (
+    `<div class="xcheck-hero"><span class="xcheck-hero-num">${s.seen}</span>` +
+    `<span class="xcheck-hero-label">${noun} seen — bars are out of this total</span></div>`
+  );
+}
+
+function statsBars(s: DashboardSummary): string {
+  return STATS_ACTIONS.map((a) => {
+    const count = Math.max(0, s.byType[a.type] ?? 0);
+    const pct = s.seen > 0 ? Math.min(100, (count / s.seen) * 100) : 0;
+    return (
+      `<div class="xcheck-bar-row"><div class="xcheck-bar-head"><span>${a.label}</span>` +
+      `<span class="xcheck-bar-val">${count} / ${s.seen} · ${Math.round(pct)}%</span></div>` +
+      `<div class="xcheck-bar-track">` +
+      `<div class="xcheck-bar-fill" style="width:${pct}%;background:${a.color}"></div>` +
+      `</div></div>`
+    );
+  }).join("");
 }
 
 function traitRow(label: string, level: string): string {
@@ -214,6 +290,17 @@ function injectStyles(): void {
   .xcheck-result-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #2f3b47;font-size:13px}
   .xcheck-result-row b{font-weight:600;color:#e7e9ea;text-transform:capitalize}
   .xcheck-tag{padding:2px 10px;border-radius:999px;font-size:12px;color:#fff;text-transform:capitalize}
+  .xcheck-seg{display:flex;gap:6px;margin-bottom:16px}
+  .xcheck-seg-btn{flex:1;padding:7px 0;background:transparent;border:1px solid #38444d;border-radius:999px;color:#cfd9de;font-size:12px;font-weight:600;cursor:pointer}
+  .xcheck-seg-btn.active{background:#1d9bf0;border-color:#1d9bf0;color:#fff}
+  .xcheck-hero{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
+  .xcheck-hero-num{font-size:28px;font-weight:700;color:#1d9bf0}
+  .xcheck-hero-label{font-size:12px;color:#8899a6}
+  .xcheck-bar-row{margin:0 0 14px}
+  .xcheck-bar-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;color:#e7e9ea}
+  .xcheck-bar-val{color:#8899a6;font-variant-numeric:tabular-nums}
+  .xcheck-bar-track{height:10px;background:#0e1620;border-radius:999px;overflow:hidden}
+  .xcheck-bar-fill{height:100%;border-radius:999px;min-width:2px;transition:width .25s ease}
   `;
   document.head.appendChild(style);
 }

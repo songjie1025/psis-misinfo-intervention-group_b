@@ -9,6 +9,7 @@
 import { InterventionDecision } from "../../interventions/types";
 import { WorkerRequest, WorkerResponse } from "../../messaging/messages";
 import { RiskBand } from "../../scoring/types";
+import { makeEvent } from "../../scoring/behaviour";
 import { POST_SELECTOR, postIdOf } from "./constants";
 
 export interface PostScannerDeps {
@@ -32,6 +33,8 @@ export function createPostScanner({ send, render }: PostScannerDeps): PostScanne
   // Ephemeral: posts the user dismissed this page load. They still consume a window slot but show
   // no box. Not persisted, so a refresh (fresh content script) brings the intervention back.
   const dismissed = new Set<string>();
+  // Posts we've already logged a FAKE_POST_SEEN impression for this session (dashboard dedupe).
+  const seen = new Set<string>();
   // The postIds that currently SHOULD carry a box — lets reattachBoxes restore them instantly
   // after React wipes them on re-render, without waiting for the async window recompute.
   let windowKeep = new Set<string>();
@@ -118,6 +121,11 @@ export function createPostScanner({ send, render }: PostScannerDeps): PostScanne
         if (!decision) continue; // not flagged -> doesn't consume a window slot
 
         placed++; // flagged posts count toward N whether or not they're dismissed
+        // Log the impression once per post: the user was shown (or dismissed) an intervention.
+        if (!seen.has(postId)) {
+          seen.add(postId);
+          void send({ type: "BEHAVIOUR_EVENT", event: makeEvent("FAKE_POST_SEEN", postId) });
+        }
         if (dismissed.has(postId)) continue; // counts, but no box
         keep.add(postId);
         if (!el.querySelector(".xcheck-intervention")) {
