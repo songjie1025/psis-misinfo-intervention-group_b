@@ -19,6 +19,8 @@ export const EVENT_WEIGHTS: Record<BehaviourEventType, number> = {
   // Exact inverses of LIKE_FLAGGED / SHARE_FLAGGED so toggling the action off cancels the raise.
   UNLIKE_FLAGGED: -10,
   UNSHARE_FLAGGED: -20,
+  // Dashboard impression signal — deliberately weightless (never affects the Risk Score).
+  FAKE_POST_SEEN: 0,
 };
 
 export function makeEvent(

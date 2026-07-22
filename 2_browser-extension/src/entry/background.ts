@@ -111,6 +111,12 @@ async function handleRequest(req: WorkerRequest): Promise<WorkerResponse> {
           `(band: ${bandFor(updated.score)})`,
       );
       await store.setRiskState(updated);
+      // Persist for the interaction dashboard (includes weightless FAKE_POST_SEEN impressions).
+      await store.appendInteraction({
+        t: req.event.timestamp,
+        type: req.event.type,
+        postId: req.event.postId,
+      });
       return {
         type: "ACK",
         tierZone: tierForScore(updated.score) ?? "none",

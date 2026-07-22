@@ -18,7 +18,10 @@ export type BehaviourEventType =
   // Undo signals: un-liking / un-sharing a flagged post reverses the earlier raise, so a
   // like that is toggled off nets to zero (see behaviour-tracker.ts).
   | "UNLIKE_FLAGGED"
-  | "UNSHARE_FLAGGED";
+  | "UNSHARE_FLAGGED"
+  // Impression signal for the interaction dashboard ONLY: a flagged post was shown an
+  // intervention. Carries zero score weight — it never moves the Risk Score.
+  | "FAKE_POST_SEEN";
 
 export interface BehaviourEvent {
   type: BehaviourEventType;

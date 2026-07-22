@@ -5,4 +5,5 @@ export const STORAGE_KEYS = {
   political: "xcheck.political",
   riskState: "xcheck.riskState",
   apiKeys: "xcheck.apiKeys",
+  interactionLog: "xcheck.interactionLog",
 } as const;
