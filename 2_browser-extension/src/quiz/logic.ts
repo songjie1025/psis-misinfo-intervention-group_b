@@ -40,3 +40,8 @@ export function buildOptions(
   const distractors = distractorPool.slice(0, 4);
   return shuffle([correct, ...distractors], rng);
 }
+
+/** Pure grading rule used by the feed card: only an exact correct answer earns the -10 reward. */
+export function isCorrectQuizAnswer(selected: string, correctAnswer: string): boolean {
+  return selected === correctAnswer;
+}

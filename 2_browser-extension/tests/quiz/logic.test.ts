@@ -1,4 +1,9 @@
-import { buildOptions, pickRandom, shuffle } from "../../src/quiz/logic";
+import {
+  buildOptions,
+  isCorrectQuizAnswer,
+  pickRandom,
+  shuffle,
+} from "../../src/quiz/logic";
 
 // Small deterministic PRNG so shuffle/buildOptions tests don't depend on Math.random.
 function mulberry32(seed: number) {
@@ -95,5 +100,12 @@ describe("buildOptions (FLICC technique multiple choice)", () => {
     const options = buildOptions("A", smallPool, mulberry32(1));
     expect(options).toHaveLength(3);
     expect([...options].sort()).toEqual(["A", "B", "C"]);
+  });
+});
+
+describe("isCorrectQuizAnswer", () => {
+  it("rewards only an exact correct answer", () => {
+    expect(isCorrectQuizAnswer("Fake Experts", "Fake Experts")).toBe(true);
+    expect(isCorrectQuizAnswer("Cherry Picking", "Fake Experts")).toBe(false);
   });
 });

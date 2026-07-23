@@ -37,27 +37,37 @@ describe("bandFor", () => {
   });
 });
 
-describe("baselineFromProfile (Openness + Conscientiousness)", () => {
+describe("baselineFromProfile (Conscientiousness + Agreeableness + Extraversion)", () => {
   it("keeps a neutral profile at the baseline", () => {
     expect(baselineFromProfile(profile())).toBe(50);
   });
 
-  it("raises the baseline for low conscientiousness", () => {
-    expect(baselineFromProfile(profile({ conscientiousness: "low" }))).toBe(60);
+  it("uses conscientiousness as the largest baseline adjustment", () => {
+    expect(baselineFromProfile(profile({ conscientiousness: "low" }))).toBe(53);
+    expect(baselineFromProfile(profile({ conscientiousness: "high" }))).toBe(47);
   });
 
-  it("lowers the baseline for high conscientiousness", () => {
-    expect(baselineFromProfile(profile({ conscientiousness: "high" }))).toBe(40);
+  it("treats agreeableness as protective when high", () => {
+    expect(baselineFromProfile(profile({ agreeableness: "low" }))).toBe(51);
+    expect(baselineFromProfile(profile({ agreeableness: "high" }))).toBe(49);
   });
 
-  it("applies the openness modifiers (low +5, high -5)", () => {
-    expect(baselineFromProfile(profile({ openness: "low" }))).toBe(55);
-    expect(baselineFromProfile(profile({ openness: "high" }))).toBe(45);
+  it("treats extraversion as a small positive sharing-risk signal", () => {
+    expect(baselineFromProfile(profile({ extraversion: "high" }))).toBe(51);
+    expect(baselineFromProfile(profile({ extraversion: "low" }))).toBe(49);
   });
 
-  it("combines low openness + low conscientiousness", () => {
+  it("does not use openness for the baseline", () => {
+    expect(baselineFromProfile(profile({ openness: "low" }))).toBe(50);
+    expect(baselineFromProfile(profile({ openness: "high" }))).toBe(50);
+  });
+
+  it("keeps the full personality-only range within 45–55", () => {
     expect(
-      baselineFromProfile(profile({ openness: "low", conscientiousness: "low" })),
-    ).toBe(65);
+      baselineFromProfile(profile({ conscientiousness: "low", agreeableness: "low", extraversion: "high" })),
+    ).toBe(55);
+    expect(
+      baselineFromProfile(profile({ conscientiousness: "high", agreeableness: "high", extraversion: "low" })),
+    ).toBe(45);
   });
 });

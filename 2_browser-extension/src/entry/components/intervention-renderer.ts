@@ -10,6 +10,7 @@ import { POST_SELECTOR } from "./constants";
 import { makeEvent } from "../../scoring/behaviour";
 import { BehaviourEvent } from "../../scoring/types";
 import { InterventionDecision } from "../../interventions/types";
+import { createPostInteractionGate } from "./post-interaction-gate";
 
 const VERDICT_COLOR: Record<string, string> = {
   FALSE: "#e0245e",
@@ -264,6 +265,10 @@ function ensureTier3Styles(): void {
   document.head.appendChild(style);
 }
 
+// Module scope is intentional: React may wipe and the scanner may re-render a box, but a user
+// should never receive a second reflective-action reduction for the same post in this page load.
+const reflectiveInteractionGate = createPostInteractionGate();
+
 /**
  * Render the intervention box onto a post.
  * `emit` reports a behaviour signal when the box (or a source link) is clicked.
@@ -276,7 +281,6 @@ export function renderDecision(
   emit: (event: BehaviourEvent) => void,
   onDismiss: () => void,
 ): void {
-  el.dataset.xcheckFlagged = "true"; // so liking/sharing this post counts (FR4)
   if (el.querySelector(".xcheck-intervention")) return;
   if (decision.tier === "T3") ensureTier3Gate();
 
@@ -313,6 +317,7 @@ export function renderDecision(
       `<span style="color:#8899a6;font-size:11px">${decision.tier} \u00b7 X-Check</span></div>` +
       `<div style="font-weight:700;margin-bottom:4px">${label}</div>` +
       (decision.headline ? `<div>${escapeHtml(decision.headline)}</div>` : "") +
+      (decision.body ? `<div style="margin-top:4px">${escapeHtml(decision.body)}</div>` : "") +
       (sources
         ? `<div style="margin-top:6px;font-size:12px;color:#8899a6">Sources: ${sources}</div>`
         : "");
@@ -341,6 +346,7 @@ export function renderDecision(
     e.stopPropagation();
     if ((e.target as HTMLElement).closest(".xcheck-dismiss")) return; // handled by its own listener
     const link = (e.target as HTMLElement).closest("a");
+    if (!reflectiveInteractionGate.claim(decision.postId)) return;
     emit(makeEvent(link ? "CLICK_TRUSTED_SOURCE" : "READ_EXPANDED_WARNING", decision.postId));
   });
 }

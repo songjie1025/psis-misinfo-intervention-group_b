@@ -10,13 +10,17 @@
 // reattaches intervention boxes.
 import { WorkerRequest, WorkerResponse } from "../../messaging/messages";
 import { QuizPayload } from "../../quiz/types";
+import { isCorrectQuizAnswer } from "../../quiz/logic";
 import { store } from "../../storage/store";
 import { QUIZ_POST_INTERVAL, QUIZ_COOLDOWN_DURATION_MS } from "../../quiz/config";
 import { renderQuizCard, QuizCardState } from "./quiz-renderer";
 import { POST_SELECTOR, postIdOf } from "./constants";
+import { makeEvent } from "../../scoring/behaviour";
 
 export interface QuizInjectorDeps {
   send(msg: WorkerRequest): Promise<WorkerResponse | undefined>;
+  /** Re-check visible intervention tiers after the one score-changing quiz outcome. */
+  onCorrectAnswer?(): void;
 }
 
 export interface QuizInjector {
@@ -41,7 +45,7 @@ interface PlacedQuiz {
   state: QuizCardState;
 }
 
-export function createQuizInjector({ send }: QuizInjectorDeps): QuizInjector {
+export function createQuizInjector({ send, onCorrectAnswer }: QuizInjectorDeps): QuizInjector {
   // Posts counted so far this page load (ephemeral, like post-scanner's dismissed/seen sets).
   const countedPosts = new Set<string>();
   let postsSincePlacement = 0;
@@ -69,12 +73,20 @@ export function createQuizInjector({ send }: QuizInjectorDeps): QuizInjector {
     return null;
   }
 
-  function callbacksFor(anchorPostId: string) {
+  function callbacksFor(anchorPostId: string, quiz: QuizPayload) {
     return {
       // The renderer mutates `state` in place; reattach() will render the card in its answered
-      // form on any future wipe, so there's nothing else to do here.
-      onAnswer: (_selected: string): void => {
-        void _selected;
+      // form on any future wipe. A correct answer is the only quiz outcome that changes Risk
+      // Score: -5. An incorrect answer and "Not interested" deliberately carry no penalty.
+      onAnswer: (selected: string): void => {
+        if (isCorrectQuizAnswer(selected, quiz.correctAnswer)) {
+          void send({
+            type: "BEHAVIOUR_EVENT",
+            event: makeEvent("QUIZ_CORRECT", quiz.quizId),
+          }).then((response) => {
+            if (response?.type === "ACK") onCorrectAnswer?.();
+          });
+        }
       },
       onNotInterested: (): void => {
         void anchorPostId; // this callback clears every placed quiz, not just its own card
@@ -100,7 +112,7 @@ export function createQuizInjector({ send }: QuizInjectorDeps): QuizInjector {
       if (!anchor) continue; // anchor post not currently in the DOM — nothing to attach to yet
       const next = anchor.nextElementSibling as HTMLElement | null;
       if (next?.getAttribute(QUIZ_ANCHOR_ATTR) === anchorPostId) continue; // already in place
-      const card = renderQuizCard(entry.quiz, entry.state, callbacksFor(anchorPostId));
+      const card = renderQuizCard(entry.quiz, entry.state, callbacksFor(anchorPostId, entry.quiz));
       card.setAttribute(QUIZ_ANCHOR_ATTR, anchorPostId);
       anchor.after(card);
     }
@@ -157,7 +169,7 @@ export function createQuizInjector({ send }: QuizInjectorDeps): QuizInjector {
       postsSincePlacement = 0;
       pendingAnchorPostId = null;
 
-      const card = renderQuizCard(quiz, state, callbacksFor(anchorPostId));
+      const card = renderQuizCard(quiz, state, callbacksFor(anchorPostId, quiz));
       card.setAttribute(QUIZ_ANCHOR_ATTR, anchorPostId);
       anchorEl.after(card);
     } finally {

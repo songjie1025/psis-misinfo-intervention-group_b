@@ -1,6 +1,6 @@
 // The wire contract between content-script and the service worker (§4).
 import { BehaviourEvent } from "../scoring/types";
-import { InterventionDecision } from "../interventions/types";
+import { InterventionDecision, Tier } from "../interventions/types";
 import { QuizPayload } from "../quiz/types";
 
 // ---- content-script -> service worker ----
@@ -16,7 +16,7 @@ export interface BehaviourEventMessage {
   event: BehaviourEvent;
 }
 
-/** Ask for a random quiz question (feed intervention, unrelated to the Risk Score). */
+/** Ask for a random quiz question. Only a later correct answer changes Risk Score (-10). */
 export interface GetQuizRequest {
   type: "GET_QUIZ";
 }
@@ -49,3 +49,38 @@ export interface QuizResponse {
 }
 
 export type WorkerResponse = DecisionResponse | AckResponse | ErrorResponse | QuizResponse;
+
+// ---- service worker -> content-script notification ----
+
+/**
+ * Sent only after an asynchronous Gemini request has produced validated wording. The original
+ * CHECK_POST request has already received deterministic mock wording, so this never holds up
+ * scrolling or intervention rendering.
+ */
+export interface WordingReadyNotification {
+  type: "WORDING_READY";
+  postId: string;
+  tier: Tier;
+  headline: string;
+  body: string;
+}
+
+export function isWorkerRequest(message: unknown): message is WorkerRequest {
+  if (typeof message !== "object" || message === null) return false;
+  const type = (message as { type?: unknown }).type;
+  return type === "CHECK_POST" || type === "BEHAVIOUR_EVENT" || type === "GET_QUIZ";
+}
+
+export function isWordingReadyNotification(
+  message: unknown,
+): message is WordingReadyNotification {
+  if (typeof message !== "object" || message === null) return false;
+  const candidate = message as Partial<WordingReadyNotification>;
+  return (
+    candidate.type === "WORDING_READY" &&
+    typeof candidate.postId === "string" &&
+    (candidate.tier === "T1" || candidate.tier === "T2" || candidate.tier === "T3") &&
+    typeof candidate.headline === "string" &&
+    typeof candidate.body === "string"
+  );
+}

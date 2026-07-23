@@ -1,6 +1,6 @@
 // Typed wrapper over chrome.storage.local. The ONLY module that touches storage directly.
 import { STORAGE_KEYS } from "./keys";
-import { ApiKeys } from "./schema";
+import { ApiKeys, CachedWording } from "./schema";
 import { PersonalityProfile, PoliticalOrientation } from "../profile/types";
 import { RiskState } from "../scoring/types";
 import { InteractionRecord } from "../dashboard/types";
@@ -8,6 +8,7 @@ import { InteractionRecord } from "../dashboard/types";
 // Keep the interaction log bounded: the dashboard's widest view is 1 month, so anything older
 // than ~31 days is never shown and can be pruned on write.
 const LOG_RETENTION_MS = 31 * 24 * 60 * 60 * 1000;
+const MAX_SESSION_WORDINGS = 60;
 
 async function get<T>(key: string): Promise<T | null> {
   const result = await chrome.storage.local.get(key);
@@ -18,16 +19,29 @@ async function set(key: string, value: unknown): Promise<void> {
   await chrome.storage.local.set({ [key]: value });
 }
 
+async function getSession<T>(key: string): Promise<T | null> {
+  const result = await chrome.storage.session.get(key);
+  return (result[key] as T) ?? null;
+}
+
+async function setSession(key: string, value: unknown): Promise<void> {
+  await chrome.storage.session.set({ [key]: value });
+}
+
 // Lightweight runtime guards: stored data from an older schema version must not
 // silently pass as valid (e.g. a missing numeric score → NaN → wrong risk band).
 const VALID_LEVELS = new Set<string>(["low", "neutral", "high"]);
 
 function isProfile(v: unknown): v is PersonalityProfile {
-  return (
-    typeof v === "object" &&
-    v !== null &&
-    VALID_LEVELS.has((v as PersonalityProfile).openness)
-  );
+  if (typeof v !== "object" || v === null) return false;
+  const profile = v as PersonalityProfile;
+  return [
+    profile.openness,
+    profile.conscientiousness,
+    profile.extraversion,
+    profile.agreeableness,
+    profile.neuroticism,
+  ].every((trait) => VALID_LEVELS.has(trait));
 }
 
 function isPolitical(v: unknown): v is PoliticalOrientation {
@@ -35,11 +49,37 @@ function isPolitical(v: unknown): v is PoliticalOrientation {
 }
 
 function isRiskState(v: unknown): v is RiskState {
+  const reflectivePostIds =
+    typeof v === "object" && v !== null
+      ? (v as RiskState).reflectivePostIds
+      : undefined;
   return (
     typeof v === "object" &&
     v !== null &&
     typeof (v as RiskState).score === "number" &&
-    Number.isFinite((v as RiskState).score)
+    Number.isFinite((v as RiskState).score) &&
+    (reflectivePostIds === undefined ||
+      (Array.isArray(reflectivePostIds) && reflectivePostIds.every((id) => typeof id === "string")))
+  );
+}
+
+function isCachedWording(v: unknown): v is CachedWording {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    typeof (v as CachedWording).headline === "string" &&
+    typeof (v as CachedWording).body === "string" &&
+    typeof (v as CachedWording).cachedAt === "number" &&
+    Number.isFinite((v as CachedWording).cachedAt) &&
+    ((v as CachedWording).cacheEpoch === null || typeof (v as CachedWording).cacheEpoch === "string")
+  );
+}
+
+async function getWordingCache(): Promise<Record<string, CachedWording>> {
+  const raw = await getSession<unknown>(STORAGE_KEYS.wordingCache);
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  return Object.fromEntries(
+    Object.entries(raw).filter((entry): entry is [string, CachedWording] => isCachedWording(entry[1])),
   );
 }
 
@@ -64,6 +104,39 @@ export const store = {
 
   getApiKeys: () => get<ApiKeys>(STORAGE_KEYS.apiKeys),
   setApiKeys: (k: ApiKeys) => set(STORAGE_KEYS.apiKeys, k),
+
+  getCachedWording: async (key: string): Promise<CachedWording | null> => {
+    const cache = await getWordingCache();
+    const value = cache[key];
+    const epoch = await store.getWordingCacheEpoch();
+    return value?.cacheEpoch === epoch ? value : null;
+  },
+  setCachedWording: async (
+    key: string,
+    value: Omit<CachedWording, "cachedAt" | "cacheEpoch">,
+    cacheEpoch: string | null,
+  ): Promise<void> => {
+    const cache = await getWordingCache();
+    cache[key] = { ...value, cachedAt: Date.now(), cacheEpoch };
+    const entries = Object.entries(cache)
+      .sort(([, a], [, b]) => b.cachedAt - a.cachedAt)
+      .slice(0, MAX_SESSION_WORDINGS);
+    await setSession(STORAGE_KEYS.wordingCache, Object.fromEntries(entries));
+  },
+  getWordingCooldownUntil: async (): Promise<number> => {
+    const value = await getSession<unknown>(STORAGE_KEYS.wordingCooldownUntil);
+    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  },
+  setWordingCooldownUntil: (until: number) => setSession(STORAGE_KEYS.wordingCooldownUntil, until),
+  getWordingNextAllowedAt: async (): Promise<number> => {
+    const value = await getSession<unknown>(STORAGE_KEYS.wordingNextAllowedAt);
+    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  },
+  setWordingNextAllowedAt: (until: number) => setSession(STORAGE_KEYS.wordingNextAllowedAt, until),
+  getWordingCacheEpoch: async (): Promise<string | null> => {
+    const value = await getSession<unknown>(STORAGE_KEYS.wordingCacheEpoch);
+    return typeof value === "string" ? value : null;
+  },
 
   /** Interaction dashboard log (append-only, auto-pruned to the last 31 days). */
   getInteractionLog: async (): Promise<InteractionRecord[]> => {
@@ -93,5 +166,12 @@ export const store = {
   setQuizCooldownUntil: (until: number) => set(STORAGE_KEYS.quizCooldownUntil, until),
 
   /** "Clear my data": wipe all X-Check local data (privacy reset). */
-  clearAll: (): Promise<void> => chrome.storage.local.clear(),
+  clearAll: async (): Promise<void> => {
+    await Promise.all([chrome.storage.local.clear(), chrome.storage.session.clear()]);
+    // This non-personal marker makes any response started before the reset stale.
+    await setSession(
+      STORAGE_KEYS.wordingCacheEpoch,
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
+  },
 };
