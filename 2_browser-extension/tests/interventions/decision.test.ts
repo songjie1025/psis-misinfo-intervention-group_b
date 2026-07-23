@@ -50,6 +50,7 @@ describe("buildDecision", () => {
       body: "",
     });
     expect(d.shouldIntervene).toBe(false);
+    expect(d.isFlagged).toBe(false);
   });
 
   it("includes sources and text for an actionable verdict", () => {
@@ -67,8 +68,50 @@ describe("buildDecision", () => {
       body: "B",
     });
     expect(d.shouldIntervene).toBe(true);
+    expect(d.isFlagged).toBe(true);
     expect(d.headline).toBe("H");
     expect(d.sources).toHaveLength(1);
     expect(d.sources[0].publisherName).toBe("Reuters");
+  });
+
+  it("uses the publisher site as a visible source label when a source name is blank", () => {
+    const verdict = {
+      claim: { content: "a" },
+      label: VerdictLabel.FALSE,
+      sources: [{ ...src, publisherName: "", publisherSite: "example.org" }],
+    };
+    const d = buildDecision({
+      postId: "1",
+      verdict,
+      tier: "T2",
+      band: "medium",
+      headline: "H",
+      body: "B",
+    });
+
+    expect(d.sources[0].publisherName).toBe("example.org");
+  });
+
+  it("keeps fact-check status when a low score suppresses the intervention UI", () => {
+    const verdict = {
+      claim: { content: "a" },
+      label: VerdictLabel.FALSE,
+      sources: [src],
+    };
+    const d = buildDecision({
+      postId: "1",
+      verdict,
+      tier: "T1",
+      band: "low",
+      headline: "Hidden wording",
+      body: "Hidden body",
+      shouldIntervene: false,
+    });
+
+    expect(d.shouldIntervene).toBe(false);
+    expect(d.isFlagged).toBe(true);
+    expect(d.headline).toBe("");
+    expect(d.body).toBe("");
+    expect(d.sources).toEqual([]);
   });
 });

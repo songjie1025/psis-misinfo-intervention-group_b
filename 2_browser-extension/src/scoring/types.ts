@@ -7,14 +7,15 @@ export type BehaviourEventType =
   | "SHARE_FLAGGED"
   | "LIKE_FLAGGED"
   | "DISMISS_INTERVENTION"
-  | "SHORT_DWELL_WARNING"
   | "FAST_SCROLL"
   | "SHORT_DWELL_POST"
   // Score-lowering signals (more reflective):
   | "LONG_DWELL_POST"
   | "READ_EXPANDED_WARNING"
   | "CLICK_TRUSTED_SOURCE"
-  | "TIME_ON_INTERVENTION"
+  // Educational quiz: only a correct answer is a reflective signal. Wrong/skipped answers do
+  // not emit any event, so they can never penalise the user.
+  | "QUIZ_CORRECT"
   // Undo signals: un-liking / un-sharing a flagged post reverses the earlier raise, so a
   // like that is toggled off nets to zero (see behaviour-tracker.ts).
   | "UNLIKE_FLAGGED"
@@ -39,4 +40,7 @@ export interface RiskState {
   /** Rolling-window accounting for the passive-signal rate cap (see learning.ts). */
   passiveWindowStart?: number;
   passivePoints?: number;
+  /** Posts that have already earned their single warning/source-click reduction. Kept locally so
+   * a refresh or React re-render cannot turn the same post into another score reduction. */
+  reflectivePostIds?: string[];
 }
