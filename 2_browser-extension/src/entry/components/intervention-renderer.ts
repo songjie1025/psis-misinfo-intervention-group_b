@@ -2,7 +2,7 @@
 // Everything in this file is the intervention UI. It switches on decision.tier:
 //   T1 -> a small label ONLY: the verdict (false / misleading / …) with NO context or sources.
 //   T2 -> a fuller label: the verdict, an explanation paragraph, AND clickable sources.
-//   T3 -> the same visible label as T2, plus a click-blocking gate for share/like/comment.
+//   T3 -> the same visible label as T2, plus a click-blocking gate for share/like/comment/post.
 // Every tier carries a dismiss (×) button. Dismissal is EPHEMERAL: the scanner drops the box for
 // this page load but does not persist it, so a refresh brings the intervention back.
 // content-script wires it in by passing `renderDecision` to the post scanner.
@@ -28,7 +28,7 @@ const VERDICT_LABEL: Record<string, string> = {
 
 // Tier 3 gate
 const TIER3_ACTION_SELECTOR =
-  "[data-xcheck-like], [data-xcheck-share], [data-xcheck-comment]";
+  "[data-xcheck-like], [data-xcheck-share], [data-xcheck-comment], [data-xcheck-post-submit]";
 const TIER3_OVERLAY_ID = "xcheck-tier3-gate";
 const TIER3_STYLE_ID = "xcheck-tier3-gate-styles";
 
@@ -37,6 +37,8 @@ let tier3Overlay: HTMLElement | null = null;
 let tier3Button: HTMLElement | null = null;
 let tier3RemainingMs = 3000;
 let tier3ProceedLabel = "Continue action";
+let tier3BodyText =
+  "This action is currently blocked for this post. Please take a moment to consider whether you really want to proceed.";
 let tier3Timer: number | null = null;
 let tier3PreviousBodyOverflow = "";
 const tier3ReplayTargets = new WeakSet<HTMLElement>();
@@ -90,9 +92,17 @@ function updateTier3OverlayText(): void {
 
 function tier3ProceedLabelFor(action: HTMLElement): string {
   if (action.matches("[data-xcheck-like]")) return "Like anyways";
-  if (action.matches("[data-xcheck-comment]")) return "Post comment anyways";
   if (action.matches("[data-xcheck-share]")) return "Share anyways";
+  if (action.matches("[data-xcheck-post-submit]")) return "Post anyways";
+  if (action.matches("[data-xcheck-comment]")) return "Post comment anyways";
   return "Continue action";
+}
+
+function tier3BodyTextFor(action: HTMLElement): string {
+  if (action.matches("[data-xcheck-post-submit]")) {
+    return "One click can reach thousands. Please verify your information before posting.";
+  }
+  return "This action is currently blocked for this post. Please take a moment to consider whether you really want to proceed.";
 }
 
 // Show the overlay (popup) and start the countdown timer.
@@ -101,6 +111,7 @@ function openTier3Overlay(target: HTMLElement): void {
   closeTier3Overlay();
   tier3Button = target;
   tier3ProceedLabel = tier3ProceedLabelFor(target);
+  tier3BodyText = tier3BodyTextFor(target);
   tier3RemainingMs = 6000;
   tier3PreviousBodyOverflow = document.body.style.overflow;
   document.body.style.overflow = "hidden";
@@ -111,7 +122,7 @@ function openTier3Overlay(target: HTMLElement): void {
     <div class="xcheck-tier3-card" role="dialog" aria-modal="true" aria-labelledby="xcheck-tier3-title">
       <div class="xcheck-tier3-badge">Timeout</div>
       <h2 id="xcheck-tier3-title">Are you really sure?</h2>
-      <p>This action is currently blocked for this post. Please take a moment to consider whether you really want to proceed.</p>
+      <p>${tier3BodyText}</p>
       <p data-xcheck-tier3-countdown></p>
       <div class="xcheck-tier3-actions">
         <button type="button" class="xcheck-tier3-secondary" data-xcheck-tier3-cancel>Cancel</button>
@@ -156,8 +167,10 @@ function onTier3Click(e: MouseEvent): void {
   }
 
   const post = action.closest<HTMLElement>(POST_SELECTOR);
-  if (!post) return;
-  if (!post.querySelector(".xcheck-T3")) return;
+  if (!action.matches("[data-xcheck-post-submit]")) {
+    if (!post) return;
+    if (!post.querySelector(".xcheck-T3")) return;
+  }
 
   e.preventDefault();
   e.stopPropagation();
