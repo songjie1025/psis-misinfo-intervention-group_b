@@ -865,6 +865,7 @@ function PostDetail({
           </button>
 
           <button
+            data-xcheck-share="true"
             onClick={() => onShare(post.id)}
             className={`flex items-center gap-2 transition ${
               post.shared ? "text-green-400" : "hover:text-indigo-400"
@@ -875,6 +876,7 @@ function PostDetail({
           </button>
 
           <button
+            data-xcheck-like="true"
             onClick={() => onLike(post.id)}
             className={`flex items-center gap-2 transition ${
               post.liked ? "text-red-400" : "hover:text-red-400"
@@ -910,6 +912,7 @@ function PostDetail({
             rows={2}
           />
           <button
+            data-xcheck-comment="true"
             onClick={submitReply}
             disabled={!replyText.trim()}
             className={`rounded-full px-4 py-2 text-sm transition ${
