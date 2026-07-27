@@ -352,12 +352,12 @@ function injectStyles(): void {
   const style = document.createElement("style");
   style.id = "xcheck-styles";
   style.textContent = `
-  #xcheck-logo{position:fixed;bottom:20px;right:20px;width:72px;height:72px;border-radius:50%;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45);z-index:2147483646;transition:transform .15s}
+  #xcheck-logo{position:fixed;bottom:20px;right:20px;width:96px;height:96px;border-radius:50%;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45);z-index:2147483646;transition:transform .15s}
   #xcheck-logo:hover{transform:scale(1.08)}
   #xcheck-logo .xcheck-logo-layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:50%;opacity:0;pointer-events:none;transition:opacity 160ms ease-in-out}
   #xcheck-logo .xcheck-logo-layer.is-visible{opacity:1}
   @media (prefers-reduced-motion: reduce){#xcheck-logo .xcheck-logo-layer{transition:none}}
-  .xcheck-panel{position:fixed;bottom:108px;right:20px;width:360px;max-height:76vh;overflow-y:auto;background:#15202b;color:#fff;border:1px solid #2f3b47;border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.55);z-index:2147483647;font-family:system-ui,-apple-system,Arial,sans-serif;display:none}
+  .xcheck-panel{position:fixed;bottom:132px;right:20px;width:360px;max-height:76vh;overflow-y:auto;background:#15202b;color:#fff;border:1px solid #2f3b47;border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.55);z-index:2147483647;font-family:system-ui,-apple-system,Arial,sans-serif;display:none}
   .xcheck-panel.open{display:block}
   .xcheck-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2f3b47;position:sticky;top:0;background:#15202b}
   .xcheck-panel-header h2{margin:0;font-size:15px;color:#1d9bf0}
