@@ -9,6 +9,7 @@
 import { InterventionDecision } from "../../interventions/types";
 import { WorkerRequest, WorkerResponse } from "../../messaging/messages";
 import { RiskBand } from "../../scoring/types";
+import { makeEvent } from "../../scoring/behaviour";
 import { POST_SELECTOR, postIdOf } from "./constants";
 
 export interface PostScannerDeps {
@@ -19,7 +20,11 @@ export interface PostScannerDeps {
 export interface PostScanner {
   start(): void;
   stop(): void;
+  /** Whether this page-load's local fact-check identified the post as actionable misinformation. */
+  isFlaggedPost(postId: string): boolean;
   reevaluateVisible(): Promise<void>;
+  /** Replace deterministic fallback copy when a background Gemini request later succeeds. */
+  applyWordingUpdate(postId: string, tier: InterventionDecision["tier"], headline: string, body: string): void;
 }
 
 // How many interventions to keep live below the reading position, by current risk band.
@@ -27,11 +32,17 @@ const WINDOW_BY_BAND: Record<RiskBand, number> = { low: 3, medium: 4, high: 5 };
 const SCROLL_THROTTLE_MS = 150;
 
 export function createPostScanner({ send, render }: PostScannerDeps): PostScanner {
-  // Cache decisions by postId. null = checked, not flagged (no verdict / not actionable).
+  // Cache display decisions by postId. null = no visible intervention (either not actionable or
+  // below the Risk Score display floor).
   const decisions = new Map<string, InterventionDecision | null>();
+  // Fact-check status is deliberately independent from `decisions`: an actionable post remains
+  // scoreable when its intervention is hidden for a low-score user.
+  const flaggedPostIds = new Set<string>();
   // Ephemeral: posts the user dismissed this page load. They still consume a window slot but show
   // no box. Not persisted, so a refresh (fresh content script) brings the intervention back.
   const dismissed = new Set<string>();
+  // Posts we've already logged a FAKE_POST_SEEN impression for this session (dashboard dedupe).
+  const seen = new Set<string>();
   // The postIds that currently SHOULD carry a box — lets reattachBoxes restore them instantly
   // after React wipes them on re-render, without waiting for the async window recompute.
   let windowKeep = new Set<string>();
@@ -85,6 +96,8 @@ export function createPostScanner({ send, render }: PostScannerDeps): PostScanne
     }
     // The band is score-derived and present on every decision, even non-intervening ones.
     currentBand = res.decision.riskBand;
+    if (res.decision.isFlagged) flaggedPostIds.add(postId);
+    else flaggedPostIds.delete(postId);
     const decision = res.decision.shouldIntervene ? res.decision : null;
     decisions.set(postId, decision);
     return decision;
@@ -118,6 +131,11 @@ export function createPostScanner({ send, render }: PostScannerDeps): PostScanne
         if (!decision) continue; // not flagged -> doesn't consume a window slot
 
         placed++; // flagged posts count toward N whether or not they're dismissed
+        // Log the impression once per post: the user was shown (or dismissed) an intervention.
+        if (!seen.has(postId)) {
+          seen.add(postId);
+          void send({ type: "BEHAVIOUR_EVENT", event: makeEvent("FAKE_POST_SEEN", postId) });
+        }
         if (dismissed.has(postId)) continue; // counts, but no box
         keep.add(postId);
         if (!el.querySelector(".xcheck-intervention")) {
@@ -144,6 +162,28 @@ export function createPostScanner({ send, render }: PostScannerDeps): PostScanne
     await updateWindow();
   }
 
+  function applyWordingUpdate(
+    postId: string,
+    tier: InterventionDecision["tier"],
+    headline: string,
+    body: string,
+  ): void {
+    const previous = decisions.get(postId);
+    // A score change may have moved this post to a different tier while Gemini was in flight.
+    // In that case retain the newer local decision; its own request/cache entry will handle copy.
+    if (!previous || previous.tier !== tier) return;
+
+    const updated: InterventionDecision = { ...previous, headline, body };
+    decisions.set(postId, updated);
+    if (!windowKeep.has(postId) || dismissed.has(postId)) return;
+
+    document.querySelectorAll<HTMLElement>(POST_SELECTOR).forEach((el) => {
+      if (postIdOf(el) !== postId) return;
+      el.querySelector(".xcheck-intervention")?.remove();
+      render(el, updated, () => dismiss(postId));
+    });
+  }
+
   function onScroll(): void {
     if (scrollTimer !== null) return;
     scrollTimer = window.setTimeout(() => {
@@ -167,5 +207,11 @@ export function createPostScanner({ send, render }: PostScannerDeps): PostScanne
     }
   }
 
-  return { start, stop, reevaluateVisible };
+  return {
+    start,
+    stop,
+    isFlaggedPost: (postId) => flaggedPostIds.has(postId),
+    reevaluateVisible,
+    applyWordingUpdate,
+  };
 }

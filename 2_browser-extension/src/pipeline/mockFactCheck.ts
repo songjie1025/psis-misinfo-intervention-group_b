@@ -1,17 +1,15 @@
 // Pre-baked fact-check lookup.
 //
-// Instead of calling Gemini + the Google Fact Check API live, we read the pre-fact-checked posts
+// Instead of calling Gemini or the Google Fact Check API for a verdict, we read the pre-fact-checked posts
 // from posts.json (the same data the mockup site serves) and return the stored verdict for a post
 // by its id. This is packaged with the extension, so the service worker fetches it via
 // chrome.runtime.getURL — no API keys required.
 //
-// The fact-check RESPONSE text (the human-readable explanation shown in the intervention) is a
-// static placeholder for now; an LLM will generate it later. Swap out PLACEHOLDER_RESPONSE /
-// generateResponse when that lands.
+// The worker may optionally call Gemini only for the user-facing wording. Its deterministic
+// fallback lives in interventions/mockWording.ts; verdict and sources remain local here.
 import { Source, Verdict, VerdictLabel } from "./types";
 
 const POSTS_FILE = "posts.json";
-const PLACEHOLDER_RESPONSE = "This content contains misinformation.";
 
 // Shape of posts.json (snake_case, single `verdicts` object; `{}` when a post has no fact-check).
 interface RawSource {
@@ -34,8 +32,6 @@ interface RawPost {
 
 export interface FactCheckResult {
   verdict: Verdict;
-  /** Human-readable explanation for the intervention (LLM-generated later; static for now). */
-  response: string;
 }
 
 // Parsed posts.json, indexed by string id. Loaded once, then cached for the worker's lifetime.
@@ -80,12 +76,6 @@ function toVerdictLabel(label: string | undefined): VerdictLabel | null {
   }
 }
 
-/** Placeholder for the (future) LLM-generated explanation. */
-function generateResponse(_verdict: Verdict): string {
-  // TODO: replace with an LLM call that explains WHY the claim is misleading/false.
-  return PLACEHOLDER_RESPONSE;
-}
-
 /**
  * Look up the pre-baked fact-check for a post by its id.
  * Returns null when the post is unknown or has an empty `verdicts` object (no misinformation).
@@ -108,5 +98,5 @@ export async function factCheck(postId: string): Promise<FactCheckResult | null>
     sources: (raw.sources ?? []).map(normalizeSource),
   };
 
-  return { verdict, response: generateResponse(verdict) };
+  return { verdict };
 }

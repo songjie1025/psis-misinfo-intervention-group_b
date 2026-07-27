@@ -27,7 +27,9 @@ export function isActionable(label: VerdictLabel): boolean {
 
 export function toInterventionSources(verdict: Verdict): InterventionSource[] {
   return verdict.sources.map((s) => ({
-    publisherName: s.publisherName,
+    // Publisher names are link labels in the intervention UI. The mock data should always
+    // provide one, but keep a visible fallback so a valid source never becomes an empty link.
+    publisherName: s.publisherName.trim() || s.publisherSite.trim() || "Source",
     url: s.url,
     articleTitle: s.articleTitle,
   }));
@@ -41,13 +43,19 @@ export function buildDecision(params: {
   band: RiskBand;
   headline: string;
   body: string;
+  /** Defaults to true for an actionable verdict; false keeps the verdict for behaviour tracking
+   * while withholding its UI below the Risk Score intervention floor. */
+  shouldIntervene?: boolean;
 }): InterventionDecision {
   const { postId, verdict, tier, band, headline, body } = params;
+  const isFlagged = Boolean(verdict && isActionable(verdict.label));
+  const shouldIntervene = isFlagged && params.shouldIntervene !== false;
 
-  if (!verdict || !isActionable(verdict.label)) {
+  if (!isFlagged || !verdict) {
     return {
       postId,
       shouldIntervene: false,
+      isFlagged: false,
       tier,
       verdictLabel: verdict?.label ?? VerdictLabel.UNVERIFIED,
       headline: "",
@@ -59,12 +67,15 @@ export function buildDecision(params: {
 
   return {
     postId,
-    shouldIntervene: true,
+    shouldIntervene,
+    isFlagged: true,
     tier,
     verdictLabel: verdict.label,
-    headline,
-    body,
-    sources: toInterventionSources(verdict),
+    // Hidden decisions must not carry wording or source UI data. The content script only needs
+    // `isFlagged` to score a later like/share.
+    headline: shouldIntervene ? headline : "",
+    body: shouldIntervene ? body : "",
+    sources: shouldIntervene ? toInterventionSources(verdict) : [],
     riskBand: band,
   };
 }

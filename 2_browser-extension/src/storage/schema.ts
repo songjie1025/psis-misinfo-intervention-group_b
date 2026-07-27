@@ -8,6 +8,14 @@ export interface ApiKeys {
   factCheck: string;
 }
 
+/** A successful Gemini wording, kept only for the current browser session. */
+export interface CachedWording {
+  headline: string;
+  body: string;
+  cachedAt: number;
+  cacheEpoch: string | null;
+}
+
 export interface StoredData {
   onboardingComplete: boolean;
   profile: PersonalityProfile | null;

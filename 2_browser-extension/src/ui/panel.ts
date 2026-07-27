@@ -6,7 +6,15 @@ import { hasAllMandatoryAnswers, scoreAnswers } from "../profile/scoring";
 import { buildProfile } from "../profile/profile";
 import { baselineFromProfile } from "../scoring/riskScore";
 import { initialState } from "../scoring/learning";
+import { STORAGE_KEYS } from "../storage/keys";
 import { store } from "../storage/store";
+import { aggregate } from "../dashboard/stats";
+import { DashboardRange, DashboardSummary } from "../dashboard/types";
+import {
+  BLUE_SHIELD_ASSET,
+  riskShieldForScore,
+  SHIELD_ASSET_PATHS,
+} from "./risk-shield";
 import {
   AnswerValue,
   BigFiveTrait,
@@ -28,15 +36,21 @@ const LEVEL_COLOR: Record<string, string> = {
   low: "#1d9bf0",
 };
 
+interface RiskShieldLogo {
+  element: HTMLElement;
+  setScore(score: number | null | undefined): void;
+}
+
 export async function initXCheckPanel(): Promise<void> {
   if (document.getElementById("xcheck-logo")) return;
   injectStyles();
   const panel = createPanel();
   const logo = createLogo();
   document.body.appendChild(panel);
-  document.body.appendChild(logo);
+  document.body.appendChild(logo.element);
 
-  logo.addEventListener("click", () => void onLogoClick(panel));
+  logo.element.addEventListener("click", () => void onLogoClick(panel));
+  syncLogoWithRiskScore(logo);
 
   // Brand-new user (no profile yet) -> auto-open the questionnaire.
   if (!(await store.getOnboardingComplete())) {
@@ -58,14 +72,88 @@ async function onLogoClick(panel: HTMLElement): Promise<void> {
   panel.classList.add("open");
 }
 
-function createLogo(): HTMLElement {
+function createLogo(): RiskShieldLogo {
   const logo = document.createElement("div");
   logo.id = "xcheck-logo";
   logo.title = "X-Check";
-  const img = document.createElement("img");
-  img.src = chrome.runtime.getURL("shield.png");
-  logo.appendChild(img);
-  return logo;
+  logo.setAttribute("aria-label", "X-Check");
+
+  const layers = [createShieldLayer(true), createShieldLayer(false)];
+  logo.append(...layers);
+
+  // The next shield is always decoded before the opacity change, so score updates never flash or
+  // stall while a newly selected image loads.
+  SHIELD_ASSET_PATHS.forEach((assetPath) => {
+    const image = new Image();
+    image.src = chrome.runtime.getURL(assetPath);
+  });
+
+  let activeLayerIndex = 0;
+  let activeAssetPath = BLUE_SHIELD_ASSET;
+  let transitionVersion = 0;
+
+  return {
+    element: logo,
+    setScore(score) {
+      const shield = riskShieldForScore(score);
+      if (shield.assetPath === activeAssetPath) return;
+
+      const current = layers[activeLayerIndex];
+      const incoming = layers[1 - activeLayerIndex];
+      const version = ++transitionVersion;
+      const showIncoming = (): void => {
+        if (version !== transitionVersion || incoming.dataset.assetPath !== shield.assetPath) return;
+        window.requestAnimationFrame(() => {
+          if (version !== transitionVersion) return;
+          incoming.classList.add("is-visible");
+          current.classList.remove("is-visible");
+          activeLayerIndex = activeLayerIndex === 0 ? 1 : 0;
+          activeAssetPath = shield.assetPath;
+          logo.title = shield.label;
+          logo.setAttribute("aria-label", shield.label);
+        });
+      };
+
+      incoming.classList.remove("is-visible");
+      incoming.dataset.assetPath = shield.assetPath;
+      incoming.addEventListener("load", showIncoming, { once: true });
+      incoming.src = chrome.runtime.getURL(shield.assetPath);
+      if (incoming.complete && incoming.naturalWidth > 0) {
+        incoming.removeEventListener("load", showIncoming);
+        showIncoming();
+      }
+    },
+  };
+}
+
+function createShieldLayer(isVisible: boolean): HTMLImageElement {
+  const image = document.createElement("img");
+  image.className = "xcheck-logo-layer";
+  if (isVisible) image.classList.add("is-visible");
+  image.alt = "";
+  image.dataset.assetPath = BLUE_SHIELD_ASSET;
+  image.src = chrome.runtime.getURL(BLUE_SHIELD_ASSET);
+  return image;
+}
+
+function scoreFromRiskState(value: unknown): number | null {
+  if (typeof value !== "object" || value === null) return null;
+  const score = (value as { score?: unknown }).score;
+  return typeof score === "number" && Number.isFinite(score) ? score : null;
+}
+
+function syncLogoWithRiskScore(logo: RiskShieldLogo): void {
+  let receivedStorageUpdate = false;
+  void store.getRiskState().then((state) => {
+    // A storage event received while this initial read was pending is newer than the read.
+    if (!receivedStorageUpdate) logo.setScore(state?.score);
+  });
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local" || !changes[STORAGE_KEYS.riskState] || !logo.element.isConnected) return;
+    receivedStorageUpdate = true;
+    logo.setScore(scoreFromRiskState(changes[STORAGE_KEYS.riskState].newValue));
+  });
 }
 
 function createPanel(): HTMLElement {
@@ -163,13 +251,87 @@ async function renderResults(panel: HTMLElement, note = ""): Promise<void> {
     (note ? `<p class="xcheck-intro" style="color:#1d9bf0">${note}</p>` : "") +
       rows +
       pol +
+      `<button class="xcheck-btn" id="xcheck-stats">View my interactions</button>` +
       `<button class="xcheck-btn secondary" id="xcheck-redo">Redo test</button>`,
   );
 
   wireClose(panel);
   panel
+    .querySelector("#xcheck-stats")
+    ?.addEventListener("click", () => void renderStats(panel));
+  panel
     .querySelector("#xcheck-redo")
     ?.addEventListener("click", () => renderQuestionnaire(panel));
+}
+
+// ---- Interaction stats view ----
+const STATS_RANGES: { id: DashboardRange; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "week", label: "Week" },
+  { id: "month", label: "Month" },
+];
+const STATS_ACTIONS: { type: string; label: string; color: string }[] = [
+  { type: "SHARE_FLAGGED", label: "Shared a flagged post", color: "#e0245e" },
+  { type: "LIKE_FLAGGED", label: "Liked a flagged post", color: "#e0245e" },
+  { type: "DISMISS_INTERVENTION", label: "Dismissed the warning", color: "#e0245e" },
+  { type: "CLICK_TRUSTED_SOURCE", label: "Opened a source", color: "#1d9bf0" },
+  { type: "READ_EXPANDED_WARNING", label: "Read the warning", color: "#1d9bf0" },
+];
+let statsRange: DashboardRange = "today";
+
+async function renderStats(panel: HTMLElement): Promise<void> {
+  const summary = aggregate(await store.getInteractionLog(), statsRange, Date.now());
+
+  const seg = STATS_RANGES.map(
+    (r) =>
+      `<button class="xcheck-seg-btn${r.id === statsRange ? " active" : ""}" ` +
+      `data-range="${r.id}">${r.label}</button>`,
+  ).join("");
+
+  const body =
+    summary.seen === 0
+      ? `<p class="xcheck-intro">No flagged posts seen in this period yet. Browse the feed so ` +
+        `X-Check can show warnings, then check back here.</p>`
+      : statsHero(summary) + statsBars(summary);
+
+  panel.innerHTML = shell(
+    "Your interactions",
+    `<div class="xcheck-seg">${seg}</div>${body}` +
+      `<button class="xcheck-btn secondary" id="xcheck-back">Back to profile</button>`,
+  );
+
+  wireClose(panel);
+  panel.querySelectorAll<HTMLElement>(".xcheck-seg-btn").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      statsRange = (btn.dataset.range as DashboardRange) ?? "today";
+      void renderStats(panel);
+    }),
+  );
+  panel
+    .querySelector("#xcheck-back")
+    ?.addEventListener("click", () => void renderResults(panel));
+}
+
+function statsHero(s: DashboardSummary): string {
+  const noun = s.seen === 1 ? "flagged post" : "flagged posts";
+  return (
+    `<div class="xcheck-hero"><span class="xcheck-hero-num">${s.seen}</span>` +
+    `<span class="xcheck-hero-label">${noun} seen — bars are out of this total</span></div>`
+  );
+}
+
+function statsBars(s: DashboardSummary): string {
+  return STATS_ACTIONS.map((a) => {
+    const count = Math.max(0, s.byType[a.type] ?? 0);
+    const pct = s.seen > 0 ? Math.min(100, (count / s.seen) * 100) : 0;
+    return (
+      `<div class="xcheck-bar-row"><div class="xcheck-bar-head"><span>${a.label}</span>` +
+      `<span class="xcheck-bar-val">${count} / ${s.seen} · ${Math.round(pct)}%</span></div>` +
+      `<div class="xcheck-bar-track">` +
+      `<div class="xcheck-bar-fill" style="width:${pct}%;background:${a.color}"></div>` +
+      `</div></div>`
+    );
+  }).join("");
 }
 
 function traitRow(label: string, level: string): string {
@@ -190,10 +352,12 @@ function injectStyles(): void {
   const style = document.createElement("style");
   style.id = "xcheck-styles";
   style.textContent = `
-  #xcheck-logo{position:fixed;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45);z-index:2147483646;transition:transform .15s}
+  #xcheck-logo{position:fixed;bottom:20px;right:20px;width:96px;height:96px;border-radius:50%;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.45);z-index:2147483646;transition:transform .15s}
   #xcheck-logo:hover{transform:scale(1.08)}
-  #xcheck-logo img{width:100%;height:100%;object-fit:contain;border-radius:50%}
-  .xcheck-panel{position:fixed;bottom:84px;right:20px;width:360px;max-height:76vh;overflow-y:auto;background:#15202b;color:#fff;border:1px solid #2f3b47;border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.55);z-index:2147483647;font-family:system-ui,-apple-system,Arial,sans-serif;display:none}
+  #xcheck-logo .xcheck-logo-layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:50%;opacity:0;pointer-events:none;transition:opacity 160ms ease-in-out}
+  #xcheck-logo .xcheck-logo-layer.is-visible{opacity:1}
+  @media (prefers-reduced-motion: reduce){#xcheck-logo .xcheck-logo-layer{transition:none}}
+  .xcheck-panel{position:fixed;bottom:132px;right:20px;width:360px;max-height:76vh;overflow-y:auto;background:#15202b;color:#fff;border:1px solid #2f3b47;border-radius:16px;box-shadow:0 10px 36px rgba(0,0,0,.55);z-index:2147483647;font-family:system-ui,-apple-system,Arial,sans-serif;display:none}
   .xcheck-panel.open{display:block}
   .xcheck-panel-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2f3b47;position:sticky;top:0;background:#15202b}
   .xcheck-panel-header h2{margin:0;font-size:15px;color:#1d9bf0}
@@ -214,6 +378,17 @@ function injectStyles(): void {
   .xcheck-result-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #2f3b47;font-size:13px}
   .xcheck-result-row b{font-weight:600;color:#e7e9ea;text-transform:capitalize}
   .xcheck-tag{padding:2px 10px;border-radius:999px;font-size:12px;color:#fff;text-transform:capitalize}
+  .xcheck-seg{display:flex;gap:6px;margin-bottom:16px}
+  .xcheck-seg-btn{flex:1;padding:7px 0;background:transparent;border:1px solid #38444d;border-radius:999px;color:#cfd9de;font-size:12px;font-weight:600;cursor:pointer}
+  .xcheck-seg-btn.active{background:#1d9bf0;border-color:#1d9bf0;color:#fff}
+  .xcheck-hero{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
+  .xcheck-hero-num{font-size:28px;font-weight:700;color:#1d9bf0}
+  .xcheck-hero-label{font-size:12px;color:#8899a6}
+  .xcheck-bar-row{margin:0 0 14px}
+  .xcheck-bar-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;color:#e7e9ea}
+  .xcheck-bar-val{color:#8899a6;font-variant-numeric:tabular-nums}
+  .xcheck-bar-track{height:10px;background:#0e1620;border-radius:999px;overflow:hidden}
+  .xcheck-bar-fill{height:100%;border-radius:999px;min-width:2px;transition:width .25s ease}
   `;
   document.head.appendChild(style);
 }

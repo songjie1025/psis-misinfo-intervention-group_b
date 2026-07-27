@@ -1,5 +1,5 @@
 // Helpers around chrome.runtime messaging so both sides share one typed contract (§4).
-import { WorkerRequest, WorkerResponse } from "./messages";
+import { isWorkerRequest, WorkerRequest, WorkerResponse } from "./messages";
 
 /** content-script side: send a typed request to the worker and await its typed reply. */
 export function sendToWorker(request: WorkerRequest): Promise<WorkerResponse> {
@@ -8,10 +8,16 @@ export function sendToWorker(request: WorkerRequest): Promise<WorkerResponse> {
 
 /** service worker side: register a single typed handler for all incoming requests. */
 export function onWorkerRequest(
-  handler: (request: WorkerRequest) => Promise<WorkerResponse>,
+  handler: (
+    request: WorkerRequest,
+    sender: chrome.runtime.MessageSender,
+  ) => Promise<WorkerResponse>,
 ): void {
-  chrome.runtime.onMessage.addListener((message: WorkerRequest, _sender, sendResponse) => {
-    handler(message)
+  chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
+    // WORDING_READY is a one-way worker -> content-script notification. Do not feed it back
+    // into the request/response handler.
+    if (!isWorkerRequest(message)) return false;
+    handler(message, sender)
       .then(sendResponse)
       .catch((err: unknown) =>
         sendResponse({ type: "ERROR", message: String(err) }),

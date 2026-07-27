@@ -609,6 +609,15 @@ function Sidebar({ currentPage, onPageChange }) {
   );
 }
 
+// The extension scans this stable contract in both the feed and the post detail view.
+// Keep it centralized so a new post presentation cannot silently lose its intervention tier.
+function xCheckPostAttributes(postId) {
+  return {
+    "data-xcheck-post": "",
+    "data-xcheck-post-id": postId,
+  };
+}
+
 function PostCard({
   post,
   commentCount,
@@ -627,7 +636,7 @@ function PostCard({
   return (
     <article
       {...(!compact
-        ? { "data-xcheck-post": "", "data-xcheck-post-id": post.id }
+        ? xCheckPostAttributes(post.id)
         : {})}
       onClick={onCardClick}
       className={containerClass}

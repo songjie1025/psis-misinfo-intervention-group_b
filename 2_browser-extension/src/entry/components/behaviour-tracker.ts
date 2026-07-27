@@ -14,6 +14,8 @@ import {
 
 export interface BehaviourTrackerDeps {
   send(msg: WorkerRequest): Promise<WorkerResponse | undefined>;
+  /** Local fact-check status, independent of whether an intervention is currently displayed. */
+  isFlaggedPost(postId: string): boolean;
   onZoneChange(): void;
 }
 
@@ -24,6 +26,7 @@ export interface BehaviourTracker {
 
 export function createBehaviourTracker({
   send,
+  isFlaggedPost,
   onZoneChange,
 }: BehaviourTrackerDeps): BehaviourTracker {
   let lastZone: string | undefined;
@@ -100,7 +103,7 @@ export function createBehaviourTracker({
     );
   }
 
-  // Like / share of a FLAGGED post raises the Risk Score (FR4). One delegated capture-phase
+  // Like / share of a fact-check FLAGGED post raises the Risk Score (FR4). One delegated capture-phase
   // listener so it fires even though the page calls stopPropagation on the button.
   //
   // Like/share are TOGGLES: a second click un-likes / un-shares. We run in the capture phase,
@@ -116,8 +119,9 @@ export function createBehaviourTracker({
         const shareBtn = target.closest("[data-xcheck-share]");
         if (!likeBtn && !shareBtn) return;
         const post = (likeBtn ?? shareBtn)?.closest<HTMLElement>(POST_SELECTOR);
-        if (!post || post.dataset.xcheckFlagged !== "true") return;
-        const postId = post.dataset.xcheckPostId;
+        if (!post) return;
+        const postId = postIdOf(post);
+        if (!isFlaggedPost(postId)) return;
         if (likeBtn) {
           const wasLiked = likeBtn.classList.contains("text-red-400"); // liked colour
           emit(makeEvent(wasLiked ? "UNLIKE_FLAGGED" : "LIKE_FLAGGED", postId));

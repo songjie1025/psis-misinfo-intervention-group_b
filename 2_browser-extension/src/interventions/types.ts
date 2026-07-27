@@ -19,6 +19,13 @@ export interface InterventionDecision {
   postId: string;
   /** false → the front-end renders nothing for this post. */
   shouldIntervene: boolean;
+  /**
+   * True when local fact-checking found actionable misinformation, even if the current Risk
+   * Score is below the display floor. Behaviour tracking uses this separately from
+   * `shouldIntervene`, so a low-score user can still move upward after liking or sharing a
+   * verified misinformation post.
+   */
+  isFlagged: boolean;
   /** Chosen by Risk Score ALONE (FR5). Drives which UI the front-end renders. */
   tier: Tier;
   verdictLabel: VerdictLabel;
