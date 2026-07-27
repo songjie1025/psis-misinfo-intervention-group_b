@@ -167,7 +167,7 @@ const Controller = {
         id: "p" + Date.now(),
         author: "You",
         username: (sessionId || "you").toString().slice(0, 12),
-        content: draftText.trim(),
+        post: draftText.trim(),
         timestamp: "now",
         category: "",
         likes: 0,
@@ -785,6 +785,7 @@ function ComposePostBox({ draftText, onDraftChange, onCreatePost, username }) {
 
         <div className="flex items-center ml-2">
           <button
+            data-xcheck-post-submit="true"
             onClick={onCreatePost}
             disabled={!draftText.trim()}
             className={`rounded-full px-4 py-2 text-sm transition ${
@@ -838,7 +839,8 @@ function PostDetail({
       </div>
 
       <article
-        {...xCheckPostAttributes(post.id)}
+        data-xcheck-post=""
+        data-xcheck-post-id={post.id}
         className="px-4 py-4 border-b border-gray-800"
       >
         <div className="flex items-start gap-3 mb-3">
@@ -924,6 +926,7 @@ function PostDetail({
             rows={2}
           />
           <button
+            data-xcheck-post-submit="true"
             onClick={submitReply}
             disabled={!replyText.trim()}
             className={`rounded-full px-4 py-2 text-sm transition ${
@@ -949,7 +952,7 @@ function PostDetail({
                   id: comment.id,
                   author: comment.author,
                   username: comment.username,
-                  content: comment.content,
+                  post: comment.content,
                   timestamp: comment.timestamp,
                   likes: comment.likes || 0,
                   shares: comment.shares || 0,
