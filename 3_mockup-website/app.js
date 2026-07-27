@@ -609,6 +609,15 @@ function Sidebar({ currentPage, onPageChange }) {
   );
 }
 
+// The extension scans this stable contract in both the feed and the post detail view.
+// Keep it centralized so a new post presentation cannot silently lose its intervention tier.
+function xCheckPostAttributes(postId) {
+  return {
+    "data-xcheck-post": "",
+    "data-xcheck-post-id": postId,
+  };
+}
+
 function PostCard({
   post,
   commentCount,
@@ -627,7 +636,7 @@ function PostCard({
   return (
     <article
       {...(!compact
-        ? { "data-xcheck-post": "", "data-xcheck-post-id": post.id }
+        ? xCheckPostAttributes(post.id)
         : {})}
       onClick={onCardClick}
       className={containerClass}
@@ -828,7 +837,10 @@ function PostDetail({
         </div>
       </div>
 
-      <article className="px-4 py-4 border-b border-gray-800">
+      <article
+        {...xCheckPostAttributes(post.id)}
+        className="px-4 py-4 border-b border-gray-800"
+      >
         <div className="flex items-start gap-3 mb-3">
           <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold">
             {post.author.charAt(0)}
@@ -912,7 +924,6 @@ function PostDetail({
             rows={2}
           />
           <button
-            data-xcheck-comment="true"
             onClick={submitReply}
             disabled={!replyText.trim()}
             className={`rounded-full px-4 py-2 text-sm transition ${
