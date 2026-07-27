@@ -29,7 +29,7 @@ const VERDICT_LABEL: Record<string, string> = {
 
 // Tier 3 gate
 const TIER3_ACTION_SELECTOR =
-  "[data-xcheck-like], [data-xcheck-share], [data-xcheck-comment]";
+  "[data-xcheck-like], [data-xcheck-share]";
 const TIER3_OVERLAY_ID = "xcheck-tier3-gate";
 const TIER3_STYLE_ID = "xcheck-tier3-gate-styles";
 
@@ -91,7 +91,6 @@ function updateTier3OverlayText(): void {
 
 function tier3ProceedLabelFor(action: HTMLElement): string {
   if (action.matches("[data-xcheck-like]")) return "Like anyways";
-  if (action.matches("[data-xcheck-comment]")) return "Post comment anyways";
   if (action.matches("[data-xcheck-share]")) return "Share anyways";
   return "Continue action";
 }
