@@ -31,7 +31,10 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "shield.png"
+                "shield.png",
+                "shield-t1-low-risk.png",
+                "shield-t2-medium-risk.png",
+                "shield-t3-high-risk.png"
             ],
             "matches": [
                 "http://localhost:8000/*"
