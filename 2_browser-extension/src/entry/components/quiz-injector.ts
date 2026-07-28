@@ -26,6 +26,16 @@ export interface QuizInjectorDeps {
 export interface QuizInjector {
   start(): void;
   stop(): void;
+  /**
+   * Manual override for the "Not interested" cooldown (e.g. a shield-menu action): clears the
+   * persisted cooldown immediately AND restores the exact card(s) that the most recent "Not
+   * interested" hid (including the one the user just answered), so nothing is lost while waiting
+   * for the normal QUIZ_POST_INTERVAL pacing to naturally place a new one — which also covers the
+   * case where there are no further unseen posts left to trigger that naturally. Does not touch
+   * `countedPosts` / `postsSincePlacement` or any other part of the existing pacing/cooldown
+   * logic — those are untouched by this override.
+   */
+  resetNotInterestedCooldown(): Promise<void>;
 }
 
 const SCROLL_THROTTLE_MS = 200;
@@ -59,6 +69,15 @@ export function createQuizInjector({ send, onCorrectAnswer }: QuizInjectorDeps):
   // see QUIZ_ANCHOR_ATTR comment above for why quiz.quizId would be unsafe here), so reattach()
   // can restore each one (including whether the user already answered it) after a React wipe.
   const placed = new Map<string, PlacedQuiz>();
+
+  // Snapshot of whatever the most recent "Not interested" click hid (see onNotInterested below),
+  // kept ONLY so resetNotInterestedCooldown() can bring those exact cards straight back —
+  // including the one the user just answered "Not interested" on. Once `placed` is cleared there
+  // is otherwise no way to recover that card short of scrolling QUIZ_POST_INTERVAL more (new,
+  // never-before-counted) posts, which also silently does nothing once there are none left (the
+  // last-quiz-in-the-feed edge case). This is purely additional bookkeeping for the manual reset;
+  // it does not change what "Not interested" itself does.
+  let suppressedByNotInterested: PlacedQuiz[] = [];
 
   const observer = new MutationObserver(() => {
     reattach();
@@ -94,6 +113,9 @@ export function createQuizInjector({ send, onCorrectAnswer }: QuizInjectorDeps):
         // window, not just dismissing the one card they clicked — so every quiz card currently
         // sitting in the feed (already placed while scrolling, whether answered or not) should
         // disappear right away too, not linger until the user happens to scroll past it again.
+        // Snapshot them first so a later manual reset can restore this exact batch (see
+        // suppressedByNotInterested above) — this snapshot is only ever read by that reset path.
+        suppressedByNotInterested = Array.from(placed.values());
         for (const id of placed.keys()) {
           document
             .querySelectorAll<HTMLElement>(`[${QUIZ_ANCHOR_ATTR}="${id}"]`)
@@ -200,5 +222,25 @@ export function createQuizInjector({ send, onCorrectAnswer }: QuizInjectorDeps):
     }
   }
 
-  return { start, stop };
+  /** Bypass the remaining "Not interested" cooldown on demand, without altering the cooldown
+   *  duration or any other suppression logic used by the normal flow. Restores whatever the most
+   *  recent "Not interested" hid (including the card the user just answered) immediately, rather
+   *  than relying on the normal QUIZ_POST_INTERVAL pacing to place a brand new one — that pacing
+   *  requires further never-before-counted posts, which may not exist (e.g. the user is already
+   *  at the end of the feed), and previously left the just-hidden card unrecoverable. */
+  async function resetNotInterestedCooldown(): Promise<void> {
+    await store.setQuizCooldownUntil(0);
+    if (suppressedByNotInterested.length > 0) {
+      for (const entry of suppressedByNotInterested) {
+        placed.set(entry.anchorPostId, entry);
+      }
+      suppressedByNotInterested = [];
+      reattach();
+    }
+    // Also let the normal pacing proceed immediately in case a later interval was already reached
+    // and merely blocked by the cooldown — unchanged from the original behaviour.
+    void tick();
+  }
+
+  return { start, stop, resetNotInterestedCooldown };
 }

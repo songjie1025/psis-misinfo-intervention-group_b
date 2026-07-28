@@ -41,7 +41,17 @@ interface RiskShieldLogo {
   setScore(score: number | null | undefined): void;
 }
 
-export async function initXCheckPanel(): Promise<void> {
+export interface XCheckPanelDeps {
+  /** Manual "Reset Not Interested" shield-menu action (see renderResults). Bypasses the
+   *  remaining quiz cooldown without touching any other quiz/cooldown behaviour. Optional so
+   *  existing callers/tests that don't care about the quiz feature keep working unchanged. */
+  onResetQuizNotInterested?: () => Promise<void>;
+}
+
+let panelDeps: XCheckPanelDeps = {};
+
+export async function initXCheckPanel(deps: XCheckPanelDeps = {}): Promise<void> {
+  panelDeps = deps;
   if (document.getElementById("xcheck-logo")) return;
   injectStyles();
   const panel = createPanel();
@@ -246,13 +256,21 @@ async function renderResults(panel: HTMLElement, note = ""): Promise<void> {
     `<div class="xcheck-result-row"><b>political</b>` +
     `<span class="xcheck-tag" style="background:#536471">${political ?? "—"}</span></div>`;
 
+  // Optional: only rendered when content-script.ts wired a quiz injector in, so this panel keeps
+  // working unchanged for any caller/test that doesn't supply it.
+  const resetQuiz = panelDeps.onResetQuizNotInterested
+    ? `<button class="xcheck-btn secondary" id="xcheck-reset-quiz">Reset "Not interested" quizzes</button>` +
+      `<p class="xcheck-msg" id="xcheck-reset-quiz-msg"></p>`
+    : "";
+
   panel.innerHTML = shell(
     "Your X-Check profile",
     (note ? `<p class="xcheck-intro" style="color:#1d9bf0">${note}</p>` : "") +
       rows +
       pol +
       `<button class="xcheck-btn" id="xcheck-stats">View my interactions</button>` +
-      `<button class="xcheck-btn secondary" id="xcheck-redo">Redo test</button>`,
+      `<button class="xcheck-btn secondary" id="xcheck-redo">Redo test</button>` +
+      resetQuiz,
   );
 
   wireClose(panel);
@@ -262,6 +280,26 @@ async function renderResults(panel: HTMLElement, note = ""): Promise<void> {
   panel
     .querySelector("#xcheck-redo")
     ?.addEventListener("click", () => renderQuestionnaire(panel));
+  panel
+    .querySelector("#xcheck-reset-quiz")
+    ?.addEventListener("click", (e) => void onResetQuizClick(panel, e.currentTarget as HTMLButtonElement));
+}
+
+/** "Reset Not Interested": manually bypass the quiz cooldown so suppressed quiz cards become
+ *  eligible again immediately. Does not touch the profile, risk state, or any other panel data —
+ *  only the quiz cooldown that "Not interested" set. */
+async function onResetQuizClick(panel: HTMLElement, button: HTMLButtonElement): Promise<void> {
+  const msg = panel.querySelector<HTMLElement>("#xcheck-reset-quiz-msg");
+  button.disabled = true;
+  try {
+    await panelDeps.onResetQuizNotInterested?.();
+    if (msg) {
+      msg.style.color = "#1d9bf0";
+      msg.textContent = "Quiz cards can appear again.";
+    }
+  } finally {
+    button.disabled = false;
+  }
 }
 
 // ---- Interaction stats view ----
