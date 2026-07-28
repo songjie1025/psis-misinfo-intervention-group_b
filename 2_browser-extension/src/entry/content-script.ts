@@ -48,7 +48,11 @@ const quiz = createQuizInjector({
   onCorrectAnswer: () => void scanner.reevaluateVisible(),
 });
 
-void initXCheckPanel();
+// Shield-menu "Reset Not Interested" action bypasses the remaining quiz cooldown; wired here
+// (rather than a direct import in panel.ts) so the panel stays decoupled from the quiz feature.
+void initXCheckPanel({
+  onResetQuizNotInterested: () => quiz.resetNotInterestedCooldown(),
+});
 scanner.start();
 behaviour.start();
 quiz.start();
